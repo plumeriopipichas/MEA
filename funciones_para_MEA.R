@@ -48,17 +48,32 @@ suavizar <- function(listado,n=7){
 # ya sea en promedio o en maximo. Devuelve lista con informacion de partes seleccionadas. EN CONSTRUCCION. 
 
 
-crear_lista <- function(video_partido, umbral_max=0.7,umbral_mean=0.5,lag_mayor = 57){
-  for (i in 1:length(video_partido)){
-      print (i)    
-      for (j in zonas){
-          print(j)
-          temp <- video_partido[[i]][ ,grep(j,names(video_partido[[i]]))]
-          cecefe <- ccf(temp[1],temp[2],plot = FALSE)
-          if (max(abs(cecefe$acf))>umbral_max){
-                print(c("maximo",max(cecefe$acf),"promedio",mean(cecefe$acf)))
-                rm(cecefe)
-          }      
+crear_lista <- function(video_partido, nombre=NA, sr=19, segundos = 300, 
+                        umbral_max=0.7,umbral_mean=0.5,lag_mayor = 57){
+    selectos <- prueba<-data.frame(matrix(ncol = 8,nrow = 0))  
+    colnames(selectos) <- c("video","zona","num_periodo","minuto_inicio","minuto_final","acf_maxima","acf_promedio","lag_acf_max")
+
+    for (i in 1:length(video_partido)){
+          print (i)    
+          for (j in zonas){
+              print(j)
+              temp <- video_partido[[i]][ ,grep(j,names(video_partido[[i]]))]
+              cecefe <- ccf(temp[1],temp[2],plot = FALSE)
+              if (max(abs(cecefe$acf))>umbral_max){
+                    print(c("maximo",max(cecefe$acf),"promedio",mean(cecefe$acf)))
+                    aux <- data.frame(matrix(ncol=ncol(selectos),nrow=1))
+                    names(aux)<-names(selectos)
+                    aux$video = nombre
+                    aux$zona = j
+                    aux$num_periodo <- i
+                    aux$minuto_inicio <- round(video_partido[[i]]$tiempo[1]/(sr*60),1)
+                    aux$minuto_final <- aux$minuto_inicio + 5
+                    aux$acf_maxima <- max(abs(cecefe$acf))
+                    aux$acf_promedio <- mean(cecefe$acf)
+                    selectos<-rbind(selectos,aux)
+              }
+              rm(cecefe)
+          } 
     }
-  }
+    return(selectos)
 } 
