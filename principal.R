@@ -12,9 +12,8 @@ minutos_particion <- 5
 
 completa <- list()
 
-for (v in 1:4){
+for (v in 1:length(bitacora$file)){
   video <- paste(bitacora$file[v],".txt",sep="")
-  print(video)
   first_cut <- (bitacora$sampling_rate[v])*(bitacora$corte_inicial[v])
   last_cut <- (bitacora$sampling_rate[v])*(bitacora$corte_final[v])
   x <- arma_base(video,first_cut,last_cut)
@@ -27,9 +26,17 @@ for (v in 1:4){
 #----------- En cada particion de cada video, revisar si pasa los umbrales del criterio, y en caso afirmativo 
 # adjuntarlo a la lista de partes seleccionadas ---------------------------
 
+lista_seleccionados<-data.frame(matrix(ncol = 8,nrow = 0))
+
+for (video in names(completa)){
+      print(video)
+      temp <- crear_lista(partition_data(completa[[video]]),nombre = video,umbral_max = 0.7,umbral_mean = 0.3)
+      names(lista_seleccionados)<-names(temp)
+      lista_seleccionados<-rbind(lista_seleccionados,temp)
+}
 
 
 
 
 
-rm(x,v,path,nombre,first_cut,last_cut,video)
+rm(x,v,path,nombre,first_cut,last_cut,video,temp)

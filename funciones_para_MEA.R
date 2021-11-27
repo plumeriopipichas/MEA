@@ -4,8 +4,11 @@
 
 arma_base<-function(video,cut_above = 0,cut_below = 0){
   path <- paste("txts/",as.character(video),sep = "")
-  x <- read.delim(path,header = FALSE, sep = " ")%>%
-    select(1,2,3,5,6,7)
+  x <- read.delim(path,header = FALSE, sep = " ")
+  if (dim(x)[2]==1){
+      x <- read.delim(path,header = FALSE, sep ="\t")   
+  }
+  x <-  select(x,1,2,3,5,6,7)
   t <- 1:dim(x)[1]
   x <- cbind(t,x)
   ca <- cut_above + 1
@@ -51,27 +54,33 @@ suavizar <- function(listado,n=7){
 crear_lista <- function(video_partido, nombre=NA, sr=19, segundos = 300, 
                         umbral_max=0.7,umbral_mean=0.5,lag_mayor = 57){
     selectos <- prueba<-data.frame(matrix(ncol = 8,nrow = 0))  
-    colnames(selectos) <- c("video","zona","num_periodo","minuto_inicio","minuto_final","acf_maxima","acf_promedio","lag_acf_max")
+    colnames(selectos) <- c("video","zona","num_periodo","minuto_inicio","minuto_final","acf_maxima",
+                            "acf_promedio","lag_acf_max")
 
     for (i in 1:length(video_partido)){
-          print (i)    
           for (j in zonas){
-              print(j)
               temp <- video_partido[[i]][ ,grep(j,names(video_partido[[i]]))]
-              cecefe <- ccf(temp[1],temp[2],plot = FALSE)
-              if (max(abs(cecefe$acf))>umbral_max){
-                    print(c("maximo",max(cecefe$acf),"promedio",mean(cecefe$acf)))
-                    aux <- data.frame(matrix(ncol=ncol(selectos),nrow=1))
-                    names(aux)<-names(selectos)
-                    aux$video = nombre
-                    aux$zona = j
-                    aux$num_periodo <- i
-                    aux$minuto_inicio <- round(video_partido[[i]]$tiempo[1]/(sr*60),1)
-                    aux$minuto_final <- aux$minuto_inicio + 5
-                    aux$acf_maxima <- max(abs(cecefe$acf))
-                    aux$acf_promedio <- mean(cecefe$acf)
-                    selectos<-rbind(selectos,aux)
+              if(sum(abs(temp[1]))>1000 && sum(abs(temp[2]))>1000){
+                cecefe <- ccf(temp[1],temp[2],plot = FALSE)  
+                if (max(abs(cecefe$acf)>umbral_max) | mean(cecefe$acf)>umbral_mean){
+                  print(c("maximo",max(cecefe$acf),"promedio",mean(cecefe$acf)))
+                  aux <- data.frame(matrix(ncol=ncol(selectos),nrow=1))
+                  names(aux)<-names(selectos)
+                  aux$video = nombre
+                  aux$zona = j
+                  aux$num_periodo <- i
+                  aux$minuto_inicio <- round(video_partido[[i]]$tiempo[1]/(sr*60),1)
+                  aux$minuto_final <- aux$minuto_inicio + 5
+                  aux$acf_maxima <- max(abs(cecefe$acf))
+                  aux$acf_promedio <- mean(cecefe$acf)
+                  selectos<-rbind(selectos,aux)
+                }              
               }
+              else{
+                print(paste(nombre,"parte",i,"ignorada por inmovilidad"))
+              }
+              
+              
               rm(cecefe)
           } 
     }
