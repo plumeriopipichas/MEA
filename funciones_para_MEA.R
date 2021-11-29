@@ -60,29 +60,55 @@ crear_lista <- function(video_partido, nombre=NA, sr=19, segundos = 300,
     for (i in 1:length(video_partido)){
           for (j in zonas){
               temp <- video_partido[[i]][ ,grep(j,names(video_partido[[i]]))]
+              suave<-data.frame(suavizar(temp[ ,1],19),suavizar(temp[ ,2],19))
+              names(suave)<-names(temp)
+              temp<-suave
+              rm(suave)
               if(sum(abs(temp[1]))>1000 && sum(abs(temp[2]))>1000){
-                cecefe <- ccf(temp[1],temp[2],plot = FALSE)  
-                if (max(abs(cecefe$acf)>umbral_max) | mean(cecefe$acf)>umbral_mean){
-                  print(c("maximo",max(cecefe$acf),"promedio",mean(cecefe$acf)))
-                  aux <- data.frame(matrix(ncol=ncol(selectos),nrow=1))
-                  names(aux)<-names(selectos)
-                  aux$video = nombre
-                  aux$zona = j
-                  aux$num_periodo <- i
-                  aux$minuto_inicio <- round(video_partido[[i]]$tiempo[1]/(sr*60),1)
-                  aux$minuto_final <- aux$minuto_inicio + 5
-                  aux$acf_maxima <- max(abs(cecefe$acf))
-                  aux$acf_promedio <- mean(cecefe$acf)
-                  selectos<-rbind(selectos,aux)
-                }              
+                    print(c(i,j))
+                    cecefe <- ccf(temp[1],temp[2],plot = FALSE,lag.max = 57)  
+                    if (max(abs(cecefe$acf)>umbral_max) | mean(cecefe$acf)>umbral_mean){
+                        cecefe <- ccf(temp[1],temp[2],lag.max = 57)
+                        print(c("maximo",max(cecefe$acf),"promedio",mean(cecefe$acf)))
+                        y<-cecefe$acf[ ,1,1]
+                        x<-which(y==max(y))
+                        aux <- data.frame(matrix(ncol=ncol(selectos),nrow=1))
+                        names(aux)<-names(selectos)
+                        aux$video = nombre
+                        aux$zona = j
+                        aux$num_periodo <- i
+                        aux$minuto_inicio <- round(video_partido[[i]]$tiempo[1]/(sr*60),1)
+                        aux$minuto_final <- aux$minuto_inicio + 5
+                        aux$acf_maxima <- max(abs(cecefe$acf))
+                        aux$acf_promedio <- mean(cecefe$acf)
+                        aux$lag_acf_max <- cecefe$lag[x,1,1]/19
+                        selectos<-rbind(selectos,aux)
+                        rm(x,y)
+                    }              
               }
               else{
-                print(paste(nombre,"parte",i,"ignorada por inmovilidad"))
+                  print(paste(nombre,"parte",i,"ignorada por inmovilidad"))
               }
-              
-              
-              rm(cecefe)
           } 
     }
+    rm(cecefe)
     return(selectos)
 } 
+
+
+#--------------------FUNCIONES PARA GENERAR GRAFICAS A PARTIR DE LA LISTA DE SELECCIONADOS -----------------
+
+comparativa_visual <- function(id,listada,min_ini=0,min_fin=100){
+                        x <- which(listada$id==id)
+                        temp <- partition_data(completa[[ listada$video[x] ]])[[ listada$num_periodo[x] ]]
+                        temp <- temp[ ,grep(listada$zona[x],names(temp))]
+                        temp$suave_paciente <- suavizar(temp[ ,1],19)
+                        temp$suave_terapeuta <- suavizar(temp[ ,2],19)
+                        temp$tiempo <- (1:dim(temp)[1]/(60*19))+listada$minuto_inicio[x]
+                        g<-ggplot()+geom_line(data=filter(temp,tiempo>min_ini,tiempo<min_fin),aes(tiempo,suave_paciente),
+                                           color='blue',size=0.5)+
+                            geom_line(data=filter(temp,tiempo>min_ini,tiempo<min_fin),aes(tiempo,suave_terapeuta),
+                                      color='brown',size=0.5)
+                        show(g)
+                      }
+
