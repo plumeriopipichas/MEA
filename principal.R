@@ -7,10 +7,8 @@ source("~/Documentos/Chamba/MEA/funciones_para_MEA.R")
 
 zonas <- c("cabeza","torso","piernas")
 rois <- c(paste(zonas,"paciente",sep="_"),paste(zonas,"terapeuta",sep="_"))
-bitacora <- read.csv("bitacora_mea.csv")
+bitacora <- read.csv("bitacora_mea.csv",encoding = "UTF-8")
 minutos_particion <- 5
-
-
 
 #----------Crear las bases de roi para cada uno de los videos. Cortando las partes inicial y final ------------
 # completa[[v]] es la base correspondiente al video v

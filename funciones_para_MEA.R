@@ -98,17 +98,21 @@ crear_lista <- function(video_partido, nombre=NA, sr=19, segundos = 300,
 
 #--------------------FUNCIONES PARA GENERAR GRAFICAS A PARTIR DE LA LISTA DE SELECCIONADOS -----------------
 
-comparativa_visual <- function(id,listada,min_ini=0,min_fin=100){
-                        x <- which(listada$id==id)
-                        temp <- partition_data(completa[[ listada$video[x] ]])[[ listada$num_periodo[x] ]]
-                        temp <- temp[ ,grep(listada$zona[x],names(temp))]
-                        temp$suave_paciente <- suavizar(temp[ ,1],19)
-                        temp$suave_terapeuta <- suavizar(temp[ ,2],19)
-                        temp$tiempo <- (1:dim(temp)[1]/(60*19))+listada$minuto_inicio[x]
-                        g<-ggplot()+geom_line(data=filter(temp,tiempo>min_ini,tiempo<min_fin),aes(tiempo,suave_paciente),
-                                           color='blue',size=0.5)+
-                            geom_line(data=filter(temp,tiempo>min_ini,tiempo<min_fin),aes(tiempo,suave_terapeuta),
-                                      color='brown',size=0.5)
-                        show(g)
-                      }
+corta_lista <- function(id){
+      x <- which(lista_seleccionados$id==id)
+      temp <- partition_data(completa[[ lista_seleccionados$video[x] ]])[[ lista_seleccionados$num_periodo[x] ]]
+      temp <- temp[ ,grep(lista_seleccionados$zona[x],names(temp))]
+      temp$suave_paciente <- suavizar(temp[ ,1],19)
+      temp$suave_terapeuta <- suavizar(temp[ ,2],19)
+      temp$tiempo <- (1:dim(temp)[1]/(60*19))+lista_seleccionados$minuto_inicio[x]
+      return(temp)
+}
+
+comparativa_visual <- function(id,min_ini=0,min_fin=100){
+      temp <- corta_lista(id)
+      g<-ggplot()+geom_line(data=filter(temp,tiempo>min_ini,tiempo<min_fin),aes(tiempo,suave_paciente),
+          color='blue',size=0.5)+geom_line(data=filter(temp,tiempo>min_ini,tiempo<min_fin),
+          aes(tiempo,suave_terapeuta),color='brown',size=0.5)
+      show(g)
+}
 
