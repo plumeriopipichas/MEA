@@ -100,19 +100,42 @@ crear_lista <- function(video_partido, nombre=NA, sr=19, segundos = 300,
 
 corta_lista <- function(id){
       x <- which(lista_seleccionados$id==id)
-      temp <- partition_data(completa[[ lista_seleccionados$video[x] ]])[[ lista_seleccionados$num_periodo[x] ]]
-      temp <- temp[ ,grep(lista_seleccionados$zona[x],names(temp))]
-      temp$suave_paciente <- suavizar(temp[ ,1],19)
-      temp$suave_terapeuta <- suavizar(temp[ ,2],19)
-      temp$tiempo <- (1:dim(temp)[1]/(60*19))+lista_seleccionados$minuto_inicio[x]
+      aux <- partition_data(completa[[ lista_seleccionados$video[x] ]])[[ lista_seleccionados$num_periodo[x] ]]
+      aux <- aux[ ,grep(lista_seleccionados$zona[x],names(aux))]
+      aux$suave_paciente <- suavizar(aux[ ,1],19)
+      aux$suave_terapeuta <- suavizar(aux[ ,2],19)
+      aux$tiempo <- (1:dim(aux)[1]/(60*19))+lista_seleccionados$minuto_inicio[x]
+      temp <- list()
+      temp[[1]]<-aux
+      temp[["video"]]<-paste("Video: ",lista_seleccionados$video[x])
+      temp[["minutos"]]<-paste("De",as.character(lista_seleccionados$minuto_inicio[x]),"a",
+                               as.character(lista_seleccionados$minuto_final[x]),"min.")
+      
       return(temp)
 }
 
 comparativa_visual <- function(id,min_ini=0,min_fin=100){
-      temp <- corta_lista(id)
+      temp <- corta_lista(id)[[1]]
+      temp2 <- corta_lista(id)
       g<-ggplot()+geom_line(data=filter(temp,tiempo>min_ini,tiempo<min_fin),aes(tiempo,suave_paciente),
           color='blue',size=0.5)+geom_line(data=filter(temp,tiempo>min_ini,tiempo<min_fin),
-          aes(tiempo,suave_terapeuta),color='brown',size=0.5)
+          aes(tiempo,suave_terapeuta),color='brown',size=0.5)+
+          ggtitle(temp2[["video"]])+xlab("minuto en el video")+
+          ylab("Azul: paciente. Rojo: terapeuta. (Promedios por segundo)")
       show(g)
-}
+      return(g)
+      }
 
+corr_cruzadas <- function(id){
+      temp <- corta_lista(id)[[1]]
+      cecefe <- ccf(temp$suave_paciente,temp$suave_terapeuta,plot = FALSE,lag.max = 57)
+      aux <- data.frame(segundos=cecefe$lag[ ,1,1]/19,correlacion=cecefe$acf[,1,1])
+      temp2 <- corta_lista(id)
+      g <- ggplot(aux,aes(segundos,correlacion))+geom_col(color='orange',fill='purple')+
+            ggtitle(paste(temp2[["video"]],temp2[["minutos"]],sep = "                 "))+
+            xlab("lidera paciente       <--   segundos de desface   -->       lidera terapeuta")+
+            ylab("correlaciones cruzadas")
+      
+      show(g)
+      return(g)
+}
