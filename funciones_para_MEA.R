@@ -3,25 +3,25 @@
 # y recorta los renglones del principio y el final que no corresponden a la sesion. 
 
 arma_base<-function(video,cut_above = 0,cut_below = 0){
-  path <- paste("txts/",as.character(video),sep = "")
-  x <- read.delim(path,header = FALSE, sep = " ")
-  if (dim(x)[2]==1){
-      x <- read.delim(path,header = FALSE, sep ="\t")   
-  }
-  x <-  select(x,1,2,3,5,6,7)
-  t <- 1:dim(x)[1]
-  x <- cbind(t,x)
-  ca <- cut_above + 1
-  cb <- dim(x)[1]-cut_below
-  x <- x[ca:cb, ]
-  names(x)<-c("tiempo",rois)
-  return(x)
+    path <- paste("txts/",as.character(video),sep = "")
+    x <- read.delim(path,header = FALSE, sep = " ")
+    if (dim(x)[2]==1){
+        x <- read.delim(path,header = FALSE, sep ="\t")   
+    }
+    x <-  select(x,1,2,3,5,6,7)
+    t <- 1:dim(x)[1]
+    x <- cbind(t,x)
+    ca <- cut_above + 1
+    cb <- dim(x)[1]-cut_below
+    x <- x[ca:cb, ]
+    names(x)<-c("tiempo",rois)
+    return(x)
 }
 
 #-----------------------------------------------------
 #funcion partition_data para separar los datos del video en bloques de la longitud de tiempo dada
 
-partition_data <- function(datos,minutos=5,sr=19){
+partition_data <- function(datos,minutos=5,sr=30){
   partes <- list()
   largo_bloques <- minutos*sr*60
   num_partes <- floor(nrow(datos)/largo_bloques)
@@ -51,8 +51,8 @@ suavizar <- function(listado,n=7){
 # ya sea en promedio o en maximo. Devuelve lista con informacion de partes seleccionadas. EN CONSTRUCCION. 
 
 
-crear_lista <- function(video_partido, nombre=NA, sr=19, segundos = 300, 
-                        umbral_max=0.7,umbral_mean=0.5,lag_mayor = 57){
+crear_lista <- function(video_partido, nombre=NA, sr=30, segundos = 300, 
+                        umbral_max=0.7,umbral_mean=0.5,lag_mayor = 90){
     selectos <- prueba<-data.frame(matrix(ncol = 8,nrow = 0))  
     colnames(selectos) <- c("video","zona","num_periodo","minuto_inicio","minuto_final","acf_maxima",
                             "acf_promedio","lag_acf_max")
@@ -60,15 +60,15 @@ crear_lista <- function(video_partido, nombre=NA, sr=19, segundos = 300,
     for (i in 1:length(video_partido)){
           for (j in zonas){
               temp <- video_partido[[i]][ ,grep(j,names(video_partido[[i]]))]
-              suave<-data.frame(suavizar(temp[ ,1],19),suavizar(temp[ ,2],19))
+              suave<-data.frame(suavizar(temp[ ,1],30),suavizar(temp[ ,2],30))
               names(suave)<-names(temp)
               temp<-suave
               rm(suave)
               if(sum(abs(temp[1]))>1000 && sum(abs(temp[2]))>1000){
                     print(c(i,j))
-                    cecefe <- ccf(temp[1],temp[2],plot = FALSE,lag.max = 57)  
+                    cecefe <- ccf(temp[1],temp[2],plot = FALSE,lag.max = 90)  
                     if (max(abs(cecefe$acf)>umbral_max) | mean(cecefe$acf)>umbral_mean){
-                        cecefe <- ccf(temp[1],temp[2],lag.max = 57)
+                        cecefe <- ccf(temp[1],temp[2],lag.max = 90)
                         print(c("maximo",max(cecefe$acf),"promedio",mean(cecefe$acf)))
                         y<-cecefe$acf[ ,1,1]
                         x<-which(y==max(y))
@@ -81,7 +81,7 @@ crear_lista <- function(video_partido, nombre=NA, sr=19, segundos = 300,
                         aux$minuto_final <- aux$minuto_inicio + 5
                         aux$acf_maxima <- max(abs(cecefe$acf))
                         aux$acf_promedio <- mean(cecefe$acf)
-                        aux$lag_acf_max <- cecefe$lag[x,1,1]/19
+                        aux$lag_acf_max <- round(cecefe$lag[x,1,1]/30,2)
                         selectos<-rbind(selectos,aux)
                         rm(x,y)
                     }              

@@ -39,9 +39,9 @@ for (video in names(completa)){
 }
 
 lista_seleccionados<-cbind(id=1:dim(lista_seleccionados)[1],lista_seleccionados)
-#lista_seleccionados<-filter(lista_seleccionados,abs(lag_acf_max)>0.15)
+#lista_seleccionados<-filter(lista_seleccionados,abs(lag_acf_max)>0.03)
 
-
+write.csv(lista_seleccionados,"lista_seleccionados.csv",row.names = FALSE)
 
 
 rm(x,v,path,nombre,first_cut,last_cut,video,temp)
