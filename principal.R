@@ -10,7 +10,7 @@ rois <- c(paste(zonas,"paciente",sep="_"),paste(zonas,"terapeuta",sep="_"))
 bitacora <- read.csv("bitacora_mea.csv",encoding = "UTF-8")
 minutos_particion <- 5
 
-#----------Crear las bases de roi para cada uno de los videos. Cortando las partes inicial y final ------------
+#----------Crear las bases de roi para cada uno de los videos.------------
 # completa[[v]] es la base correspondiente al video v
 
 completa <- list()
@@ -27,7 +27,8 @@ for (v in 1:length(bitacora$file)){
 }
 
 #----------- En cada particion de cada video, revisar si pasa los umbrales del criterio, y en caso afirmativo 
-# adjuntarlo a la lista de partes seleccionadas ---------------------------
+# adjuntarlo a la lista de partes seleccionadas. lista_seleccionados  es para periodos de 5 minutos con 
+# acf grandes. lista_mov_altos es para detectar periodos de 30 segundos con mucho movimiento de ambos sujetos---------------------------
 
 lista_seleccionados<-data.frame(matrix(ncol = 8,nrow = 0))
 
@@ -41,7 +42,23 @@ for (video in names(completa)){
 lista_seleccionados<-cbind(id=1:dim(lista_seleccionados)[1],lista_seleccionados)
 lista_seleccionados<-filter(lista_seleccionados,abs(lag_acf_max)>0.025)
 
+print("Buscando regiones de 30seg con mas movimiento...")
+
+lista_mov_altos <- data.frame(matrix(ncol = 7,nrow = 0))  
+colnames(lista_mov_altos) <- c("video","zona","minuto_inicio","minuto_final",
+                               "mov_paciente","mov_terapeuta","mov_medio")
+
+for (v in names(completa)){
+  print(v)
+  lista_mov_altos <- rbind(lista_mov_altos,
+                           crea_lista_movs(partition_data(completa[[v]],minutos=0.5),nombre_video = v))    
+}
+
+
+lista_mov_altos<-cbind(id=1:nrow(lista_mov_altos),lista_mov_altos)
+
 write.csv(lista_seleccionados,"lista_seleccionados.csv",row.names = FALSE)
+write.csv(lista_mov_altos,"lista_mov_altos.csv",row.names = FALSE)
 
 
 rm(x,v,path,nombre,first_cut,last_cut,video,temp)

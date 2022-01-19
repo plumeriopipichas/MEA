@@ -51,10 +51,10 @@ suavizar <- function(listado,n=7){
 #----------------- funcion para detectar lapsos con valores altos. Dada una lista en que cada entrada es
 # un vector de datos numericos, devuelve los indices que superan el cuantil q dado-------------
 
-detecta_altos <- function(lista_datos,q=0.5){
+detecta_altos <- function(lista_datos,q=0.9){
       promedios <- numeric()
       for (i in 1:length(lista_datos)){
-            promedios <- c(promedios,mean(lista_datos[[i]],na.rm=TRUE)) 
+          promedios <- c(promedios,mean(lista_datos[[i]],na.rm=TRUE)) 
       }
       altos <- which(promedios>quantile(promedios,probs=q))
       return(altos)
@@ -62,13 +62,12 @@ detecta_altos <- function(lista_datos,q=0.5){
 
 
 #------------------------------
-# dado una particion de uno de los videos, selecciona los que sean relevantes por tener una correlacion cruzada alta, 
-# ya sea en promedio o en maximo. Devuelve lista con informacion de partes seleccionadas. 
-
+# dado una particion de uno de los videos, selecciona los que sean relevantes por tener una correlacion 
+#cruzada alta,  ya sea en promedio o en maximo. Devuelve lista con informacion de partes seleccionadas. 
 
 crear_lista <- function(video_partido, nombre=NA, sr=30, segundos = 300, 
                         umbral_max=0.7,umbral_mean=0.5,lag_mayor = 90){
-    selectos <- prueba<-data.frame(matrix(ncol = 8,nrow = 0))  
+    selectos <- data.frame(matrix(ncol = 8,nrow = 0))  
     colnames(selectos) <- c("video","zona","num_periodo","minuto_inicio","minuto_final","acf_maxima",
                             "acf_promedio","lag_acf_max")
 
@@ -113,42 +112,60 @@ crear_lista <- function(video_partido, nombre=NA, sr=30, segundos = 300,
 #-------------------Crear la lista de periodos de medio minuto en que, para la roi que se indique, 
 #   hay mucho movimiento, tanto del paciente como del terapeuta *donde mucho es que sea mayor al cuantil dado*     
 
-crea_lista_movs <- function(video,q=0.85){
-          for (i in zonas){
-              temp <- video[ ,grep(i,names(video))]
-              temp1 <-as.data.frame(temp[ ,grep("paciente",names(temp))])
-              temp2 <- as.data.frame(temp[ ,grep("terapeuta",names(temp))])
-              print(dim(temp1))
-              altos1 <- detecta_altos(partition_data(temp1,minutos=0.5,pasos = 2,sr=30),q=q)
-              altos2 <- detecta_altos(partition_data(temp2,minutos=0.5,pasos = 2,sr=30),q=q)
-              ambos <- intersect(altos1,altos2)
-              print(i)
-              print(ambos)
-          }
-}
-        
+crea_lista_movs <- function(vp,minutos=1,q=0.71,nombre_video=NA,sr=30){
+          selectos <-data.frame(matrix(ncol = 7,nrow = 0))  
+          colnames(selectos) <- c("video","zona","minuto_inicio","minuto_final",
+                                  "mov_paciente","mov_terapeuta","mov_medio")
+          
+          for (k in zonas){
+              temp<-list()
+              temp1<-list()
+              temp2<-list()
+              for (i in 1:length(vp)){
+                  temp[[i]] <- vp[[i]][ ,grep(k,names(vp[[i]]))]
+                  temp1[[i]] <- as.numeric(temp[[i]][ ,grep("paciente",names(temp[[i]]))])
+                  temp2[[i]] <- as.numeric(temp[[i]][ ,grep("terapeuta",names(temp[[i]]))])
+              }
+              aux1 <- detecta_altos(temp1,q)
+              aux2 <- detecta_altos(temp2,q)
+              Aux<-intersect(aux1,aux2)
+              for (j in Aux){
+                  renglon <- data.frame(matrix(ncol=ncol(selectos),nrow=1))
+                  names(renglon)<-names(selectos)
+                  renglon$video <- nombre_video
+                  renglon$zona <- k
+                  renglon$minuto_inicio <- round(vp[[j]]$tiempo[1]/(60*sr),1)
+                  renglon$minuto_final <- round(vp[[j]]$tiempo[nrow(vp[[j]])]/(60*sr),1)
+                  renglon$mov_paciente <- mean(temp1[[j]])
+                  renglon$mov_terapeuta <- mean(temp2[[j]])
+                  renglon<-mutate(renglon,mov_medio=mean(mov_paciente,mov_terapeuta))
+                  selectos<-rbind(selectos,renglon)
+              }
+          }          
+          return(selectos)
+}        
 
 #--------------------FUNCIONES PARA GENERAR GRAFICAS A PARTIR DE LA LISTA DE SELECCIONADOS -----------------
 
-corta_lista <- function(id){
-      x <- which(lista_seleccionados$id==id)
-      aux <- partition_data(completa[[ lista_seleccionados$video[x] ]])[[ lista_seleccionados$num_periodo[x] ]]
-      aux <- aux[ ,grep(lista_seleccionados$zona[x],names(aux))]
+corta_lista <- function(id,ls=lista_seleccionados){
+      x <- which(ls$id==id)
+      aux <- partition_data(completa[[ ls$video[x] ]])[[ ls$num_periodo[x] ]]
+      aux <- aux[ ,grep(ls$zona[x],names(aux))]
       aux$suave_paciente <- suavizar(aux[ ,1],30)
       aux$suave_terapeuta <- suavizar(aux[ ,2],30)
-      aux$tiempo <- (1:dim(aux)[1]/(60*30))+lista_seleccionados$minuto_inicio[x]
+      aux$tiempo <- (1:dim(aux)[1]/(60*30))+ls$minuto_inicio[x]
       temp <- list()
       temp[[1]]<-aux
-      temp[["video"]]<-paste("Video: ",lista_seleccionados$video[x])
-      temp[["minutos"]]<-paste("De",as.character(lista_seleccionados$minuto_inicio[x]),"a",
-                               as.character(lista_seleccionados$minuto_final[x]),"min.")
+      temp[["video"]]<-paste("Video: ",ls$video[x])
+      temp[["minutos"]]<-paste("De",as.character(ls$minuto_inicio[x]),"a",
+                               as.character(ls$minuto_final[x]),"min.")
       
       return(temp)
 }
 
-comparativa_visual <- function(id,min_ini=0,min_fin=100){
-      temp <- corta_lista(id)[[1]]
-      temp2 <- corta_lista(id)
+comparativa_visual <- function(id,min_ini=0,min_fin=100,que_lista=lista_seleccionados){
+      temp <- corta_lista(id,ls=que_lista)[[1]]
+      temp2 <- corta_lista(id,ls=que_lista)
       g<-ggplot()+geom_line(data=filter(temp,tiempo>min_ini,tiempo<min_fin),aes(tiempo,suave_paciente),
           color='blue',size=0.5)+geom_line(data=filter(temp,tiempo>min_ini,tiempo<min_fin),
           aes(tiempo,suave_terapeuta),color='brown',size=0.5)+
@@ -158,11 +175,11 @@ comparativa_visual <- function(id,min_ini=0,min_fin=100){
       return(g)
       }
 
-corr_cruzadas <- function(id){
-      temp <- corta_lista(id)[[1]]
+corr_cruzadas <- function(id,que_lista=lista_seleccionados){
+      temp <- corta_lista(id,ls=que_lista)[[1]]
       cecefe <- ccf(temp$suave_paciente,temp$suave_terapeuta,plot = FALSE,lag.max = 57)
       aux <- data.frame(segundos=cecefe$lag[ ,1,1]/19,correlacion=cecefe$acf[,1,1])
-      temp2 <- corta_lista(id)
+      temp2 <- corta_lista(id,ls=que_lista)
       g <- ggplot(aux,aes(segundos,correlacion))+geom_col(color='orange',fill='purple')+
             ggtitle(paste(temp2[["video"]],temp2[["minutos"]],sep = "                 "))+
             xlab("lidera paciente       <--   segundos de desface   -->       lidera terapeuta")+
