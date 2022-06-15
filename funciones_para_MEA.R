@@ -67,9 +67,9 @@ detecta_altos <- function(lista_datos,q=0.9){
 
 crear_lista <- function(video_partido, nombre=NA, sr=30, segundos = 300, 
                         umbral_max=0.7,umbral_mean=0.5,lag_mayor = 90){
-    selectos <- data.frame(matrix(ncol = 8,nrow = 0))  
-    colnames(selectos) <- c("video","zona","num_periodo","minuto_inicio","minuto_final","acf_maxima",
-                            "acf_promedio","lag_acf_max")
+    selectos <- data.frame(matrix(ncol = 10,nrow = 0))  
+    colnames(selectos) <- c("video","zona","num_periodo","minuto_inicio","minuto_final","acf_max",
+                            "acf_promedio","lag_acf_max","spearman_max","lag_spearman_max")
 
     for (i in 1:length(video_partido)){
           for (j in zonas){
@@ -79,13 +79,18 @@ crear_lista <- function(video_partido, nombre=NA, sr=30, segundos = 300,
               temp<-suave
               rm(suave)
               if(sum(abs(temp[1]))>1000 && sum(abs(temp[2]))>1000){
-                    print(c(i,j))
-                    cecefe <- ccf(temp[1],temp[2],plot = FALSE,lag.max = 90)  
-                    if (max(abs(cecefe$acf)>umbral_max) | mean(cecefe$acf)>umbral_mean){
-                        cecefe <- ccf(temp[1],temp[2],lag.max = 90)
-                        print(c("maximo",max(cecefe$acf),"promedio",mean(cecefe$acf)))
+                    #print(c(i,j))
+                    cecefe <- ccf(temp[1],temp[2],plot = FALSE,lag.max = 150,method="pearson")  
+                    cecefe_s <- ccf(rank(temp[1]),rank(temp[2]),plot = FALSE,lag.max = 150,method="spearman")  
+                    if (max(abs(cecefe_s$acf)>umbral_max) | mean(cecefe_s$acf)>umbral_mean){
+                        cecefe <- ccf(temp[1],temp[2],lag.max = 90,plot=FALSE)
+                        cecefe_s<-ccf(rank(temp[1]),rank(temp[2]),lag.max = 150,plot=FALSE,method="spearman")
+                        #print(c("maximo",max(cecefe$acf),"promedio",mean(cecefe$acf)))
+                        #print(c("maximo spearman",max(cecefe_s$acf),"promedio spearman",mean(cecefe_s$acf)))
                         y<-cecefe$acf[ ,1,1]
                         x<-which(y==max(y))
+                        y2<-cecefe_s$acf[ ,1,1]
+                        x2<-which(y2==max(y2))
                         aux <- data.frame(matrix(ncol=ncol(selectos),nrow=1))
                         names(aux)<-names(selectos)
                         aux$video = nombre
@@ -93,29 +98,32 @@ crear_lista <- function(video_partido, nombre=NA, sr=30, segundos = 300,
                         aux$num_periodo <- i
                         aux$minuto_inicio <- round(video_partido[[i]]$tiempo[1]/(sr*60),1)
                         aux$minuto_final <- aux$minuto_inicio + 5
-                        aux$acf_maxima <- max(abs(cecefe$acf))
+                        aux$acf_max <- max(abs(cecefe$acf))
                         aux$acf_promedio <- mean(cecefe$acf)
                         aux$lag_acf_max <- round(cecefe$lag[x,1,1]/30,2)
+                        aux$spearman_max <- max(abs(cecefe_s$acf))
+                        aux$lag_spearman_max <- round(cecefe_s$lag[x2,1,1]/30,2)
                         selectos<-rbind(selectos,aux)
-                        rm(x,y)
+                        rm(x,y,x2,y2)
                     }              
               }
               else{
-                  print(paste(nombre,"parte",i,"ignorada por inmovilidad"))
+                  #print(paste(nombre,"parte",i,"ignorada por inmovilidad"))
               }
           } 
     }
-    rm(cecefe)
+    rm(cecefe,cecefe_s)
     return(selectos)
 } 
 
 #-------------------Crear la lista de periodos de medio minuto en que, para la roi que se indique, 
 #   hay mucho movimiento, tanto del paciente como del terapeuta *donde mucho es que sea mayor al cuantil dado*     
 
-crea_lista_movs <- function(vp,minutos=1,q=0.71,nombre_video=NA,sr=30){
-          selectos <-data.frame(matrix(ncol = 7,nrow = 0))  
+crea_lista_movs <- function(vp,q=0.71,nombre_video=NA,sr=30){
+          selectos <-data.frame(matrix(ncol = 12,nrow = 0))  
           colnames(selectos) <- c("video","zona","minuto_inicio","minuto_final",
-                                  "mov_paciente","mov_terapeuta","mov_medio")
+                                  "mov_paciente","mov_terapeuta","mov_medio","acf_max",
+                                  "lag_acf_max","spearman_max","lag_spearman_max","lidera")
           
           for (k in zonas){
               temp<-list()
@@ -130,6 +138,7 @@ crea_lista_movs <- function(vp,minutos=1,q=0.71,nombre_video=NA,sr=30){
               aux2 <- detecta_altos(temp2,q)
               Aux<-intersect(aux1,aux2)
               for (j in Aux){
+                  print(c(j,"j","zona",k))
                   renglon <- data.frame(matrix(ncol=ncol(selectos),nrow=1))
                   names(renglon)<-names(selectos)
                   renglon$video <- nombre_video
@@ -139,6 +148,24 @@ crea_lista_movs <- function(vp,minutos=1,q=0.71,nombre_video=NA,sr=30){
                   renglon$mov_paciente <- mean(temp1[[j]])
                   renglon$mov_terapeuta <- mean(temp2[[j]])
                   renglon<-mutate(renglon,mov_medio=mean(mov_paciente,mov_terapeuta))
+                  cecefe <- ccf(temp1[[j]],temp2[[j]],lag.max = 150,plot=FALSE)
+                  cecefe_s <- ccf(rank(temp1[[j]]),rank(temp2[[j]]),lag.max = 150,plot=FALSE)
+                  print(c("maximo",max(cecefe$acf),"promedio",mean(cecefe$acf)))
+                  y<-cecefe$acf[ ,1,1]
+                  x<-which(y==max(y))
+                  y2<-cecefe_s$acf[ ,1,1]
+                  x2<-which(y2==max(y2))
+                  renglon$acf_max <- y[x]
+                  renglon$lag_acf_max <- round(cecefe$lag[x,1,1]/sr,2)
+                  renglon$spearman_max <- y2[x2]
+                  renglon$lag_spearman_max <- round(cecefe$lag[x2,1,1]/sr,2)
+                  renglon$lidera<-"-"
+                  if (renglon$lag_acf_max>0.1 ){
+                      renglon$lidera="terapeuta"
+                  }
+                  if (renglon$lag_acf_max< -0.1 ){
+                     renglon$lidera="paciente"
+                  }
                   selectos<-rbind(selectos,renglon)
               }
           }          
@@ -188,3 +215,5 @@ corr_cruzadas <- function(id,que_lista=lista_seleccionados){
       show(g)
       return(g)
 }
+
+#--------------------FUNCIONES PARA GENERAR GRAFICAS A PARTIR DE LA LISTA DE MOVIMIENTO ALTO -------

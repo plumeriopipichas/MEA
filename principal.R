@@ -30,7 +30,8 @@ for (v in 1:length(bitacora$file)){
 # adjuntarlo a la lista de partes seleccionadas. lista_seleccionados  es para periodos de 5 minutos con 
 # acf grandes. lista_mov_altos es para detectar periodos de 30 segundos con mucho movimiento de ambos sujetos---------------------------
 
-lista_seleccionados<-data.frame(matrix(ncol = 8,nrow = 0))
+
+lista_seleccionados<-data.frame(matrix(ncol = 10,nrow = 0))
 
 for (video in names(completa)){
       print(video)
@@ -40,7 +41,7 @@ for (video in names(completa)){
 }
 
 lista_seleccionados<-cbind(id=1:dim(lista_seleccionados)[1],lista_seleccionados)
-lista_seleccionados<-filter(lista_seleccionados,abs(lag_acf_max)>0.025)
+lista_seleccionados<-filter(lista_seleccionados,abs(lag_spearman_max)>0.025)
 
 print("Buscando regiones de 30seg con mas movimiento...")
 
@@ -51,14 +52,12 @@ colnames(lista_mov_altos) <- c("video","zona","minuto_inicio","minuto_final",
 for (v in names(completa)){
   print(v)
   lista_mov_altos <- rbind(lista_mov_altos,
-                           crea_lista_movs(partition_data(completa[[v]],minutos=0.5),nombre_video = v))    
+                           crea_lista_movs(partition_data(completa[[v]]),nombre_video = v))    
 }
 
-
-lista_mov_altos<-cbind(id=1:nrow(lista_mov_altos),lista_mov_altos)
+#lista_mov_altos<-cbind(id=1:nrow(lista_mov_altos),lista_mov_altos)%>%
+#      filter(lidera%in%c("paciente","terapeuta"))
 
 write.csv(lista_seleccionados,"lista_seleccionados.csv",row.names = FALSE)
-write.csv(lista_mov_altos,"lista_mov_altos.csv",row.names = FALSE)
-
 
 rm(x,v,path,nombre,first_cut,last_cut,video,temp)
