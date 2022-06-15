@@ -60,7 +60,7 @@ The list _completa_ contains the data for each of the videos listed in _bitacora
 kable(head(completa[['Vid5']],10),caption='Top entries for Vid5 raw data.')
 ```
 
-The code below generates the database _lista_seleccionados_. This contains information on segments where high correlation (with time lags) between the movements of the subjects is detected. Each of the videos in _bitacora_ is partiotioned in `minutos_particion` minutes segments. For each segment and roi, cross correlations (wuth 3 seconds max-lags in both directions) between therapist and subject movements are performed; the maximum and the mean values for the correlations for all the lags are recorded; if either the max>0.7 or mean>0.3 the segment is added to the list. If the maximum correlation corresponds to lag 0, the segment is discarded (simultaneous movement), since the correlation in this case is most likely due to external noise.   
+The code below generates the database _lista_seleccionados_. This contains information on segments where high correlation (with time lags) between the movements of the subjects is detected. Each of the videos in _bitacora_ is partiotioned in `r minutos_particion` minutes segments. For each segment and roi, cross correlations (wuth 3 seconds max-lags in both directions) between therapist and subject movements are performed; the maximum and the mean values for the correlations for all the lags are recorded; if either the max>0.7 or mean>0.3 the segment is added to the list. If the maximum correlation corresponds to lag 0, the segment is discarded (simultaneous movement), since the correlation in this case is most likely due to external noise.   
 
 ```{r, echo=TRUE}
 lista_seleccionados<-data.frame(matrix(ncol = 10,nrow = 0))
@@ -78,7 +78,7 @@ lista_seleccionados<-filter(lista_seleccionados,abs(lag_spearman_max)>0.025)
 write.csv(lista_seleccionados,"lista_seleccionados.csv",row.names = FALSE)
 ```
 
-```{r}
+```{r echo=FALSE}
 kable(lista_seleccionados,caption="Five minute segments with high lagged correlation. Lags are shown in seconds, with positive values corresponding to lags where the therapist leads.")
 ```
 
@@ -105,4 +105,11 @@ The function _corr_cruzadas_ shows the cross correlation between movements of bo
 for (i in lista_seleccionados$id){
   corr_cruzadas(i)
 }
+```
+
+
+With the function _comparativa_visual_ we can zoom in to look into shorter periods of time. As an example, we generate the plot of the first segment (id=1) from minute 7.1 to minute 8.6:
+
+```{r}
+comparativa_visual(id=1,min_ini = 7.1,min_fin = 8.6)
 ```
