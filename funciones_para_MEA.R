@@ -83,7 +83,7 @@ crear_lista <- function(video_partido, nombre=NA, sr=30, segundos = 300,
                     cecefe <- ccf(temp[1],temp[2],plot = FALSE,lag.max = 150,method="pearson")  
                     cecefe_s <- ccf(rank(temp[1]),rank(temp[2]),plot = FALSE,lag.max = 150,method="spearman")  
                     if (max(abs(cecefe_s$acf)>umbral_max) | mean(cecefe_s$acf)>umbral_mean){
-                        cecefe <- ccf(temp[1],temp[2],lag.max = 90,plot=FALSE)
+                        cecefe <- ccf(temp[1],temp[2],lag.max = 150,plot=FALSE)
                         cecefe_s<-ccf(rank(temp[1]),rank(temp[2]),lag.max = 150,plot=FALSE,method="spearman")
                         #print(c("maximo",max(cecefe$acf),"promedio",mean(cecefe$acf)))
                         #print(c("maximo spearman",max(cecefe_s$acf),"promedio spearman",mean(cecefe_s$acf)))
@@ -120,8 +120,8 @@ crear_lista <- function(video_partido, nombre=NA, sr=30, segundos = 300,
 #   hay mucho movimiento, tanto del paciente como del terapeuta *donde mucho es que sea mayor al cuantil dado*     
 
 crea_lista_movs <- function(vp,q=0.71,nombre_video=NA,sr=30){
-          selectos <-data.frame(matrix(ncol = 12,nrow = 0))  
-          colnames(selectos) <- c("video","zona","minuto_inicio","minuto_final",
+          selectos <-data.frame(matrix(ncol = 13,nrow = 0))  
+          colnames(selectos) <- c("video","zona","num_periodo","minuto_inicio","minuto_final",
                                   "mov_paciente","mov_terapeuta","mov_medio","acf_max",
                                   "lag_acf_max","spearman_max","lag_spearman_max","lidera")
           
@@ -131,26 +131,29 @@ crea_lista_movs <- function(vp,q=0.71,nombre_video=NA,sr=30){
               temp2<-list()
               for (i in 1:length(vp)){
                   temp[[i]] <- vp[[i]][ ,grep(k,names(vp[[i]]))]
-                  temp1[[i]] <- as.numeric(temp[[i]][ ,grep("paciente",names(temp[[i]]))])
-                  temp2[[i]] <- as.numeric(temp[[i]][ ,grep("terapeuta",names(temp[[i]]))])
+                  temp1[[i]] <- suavizar(
+                    as.numeric(temp[[i]][ ,grep("paciente",names(temp[[i]]))]),30)
+                  temp2[[i]] <- suavizar(
+                    as.numeric(temp[[i]][ ,grep("terapeuta",names(temp[[i]]))]),30)
               }
               aux1 <- detecta_altos(temp1,q)
               aux2 <- detecta_altos(temp2,q)
               Aux<-intersect(aux1,aux2)
               for (j in Aux){
-                  print(c(j,"j","zona",k))
+                  #print(c(j,"j","zona",k))
                   renglon <- data.frame(matrix(ncol=ncol(selectos),nrow=1))
                   names(renglon)<-names(selectos)
                   renglon$video <- nombre_video
                   renglon$zona <- k
+                  renglon$num_periodo <- j
                   renglon$minuto_inicio <- round(vp[[j]]$tiempo[1]/(60*sr),1)
                   renglon$minuto_final <- round(vp[[j]]$tiempo[nrow(vp[[j]])]/(60*sr),1)
                   renglon$mov_paciente <- mean(temp1[[j]])
                   renglon$mov_terapeuta <- mean(temp2[[j]])
-                  renglon<-mutate(renglon,mov_medio=mean(mov_paciente,mov_terapeuta))
+                  renglon<-mutate(renglon,mov_medio=mean(c(mov_paciente,mov_terapeuta)))
                   cecefe <- ccf(temp1[[j]],temp2[[j]],lag.max = 150,plot=FALSE)
                   cecefe_s <- ccf(rank(temp1[[j]]),rank(temp2[[j]]),lag.max = 150,plot=FALSE)
-                  print(c("maximo",max(cecefe$acf),"promedio",mean(cecefe$acf)))
+                  #print(c("maximo",max(cecefe$acf),"promedio",mean(cecefe$acf)))
                   y<-cecefe$acf[ ,1,1]
                   x<-which(y==max(y))
                   y2<-cecefe_s$acf[ ,1,1]
@@ -158,12 +161,12 @@ crea_lista_movs <- function(vp,q=0.71,nombre_video=NA,sr=30){
                   renglon$acf_max <- y[x]
                   renglon$lag_acf_max <- round(cecefe$lag[x,1,1]/sr,2)
                   renglon$spearman_max <- y2[x2]
-                  renglon$lag_spearman_max <- round(cecefe$lag[x2,1,1]/sr,2)
+                  renglon$lag_spearman_max <- round(cecefe_s$lag[x2,1,1]/sr,2)
                   renglon$lidera<-"-"
-                  if (renglon$lag_acf_max>0.1 ){
+                  if (renglon$lag_spearman_max>0.1 ){
                       renglon$lidera="terapeuta"
                   }
-                  if (renglon$lag_acf_max< -0.1 ){
+                  if (renglon$lag_spearman_max< -0.1 ){
                      renglon$lidera="paciente"
                   }
                   selectos<-rbind(selectos,renglon)
@@ -176,7 +179,11 @@ crea_lista_movs <- function(vp,q=0.71,nombre_video=NA,sr=30){
 
 corta_lista <- function(id,ls=lista_seleccionados){
       x <- which(ls$id==id)
-      aux <- partition_data(completa[[ ls$video[x] ]])[[ ls$num_periodo[x] ]]
+      delta <- ls$minuto_final[x]-ls$minuto_inicio[x]
+      video<-ls$video[x]
+      periodo<-ls$num_periodo[x] 
+      aux <- partition_data(completa[[video]],minutos=delta)
+      aux<-aux[[periodo]]
       aux <- aux[ ,grep(ls$zona[x],names(aux))]
       aux$suave_paciente <- suavizar(aux[ ,1],30)
       aux$suave_terapeuta <- suavizar(aux[ ,2],30)
@@ -204,8 +211,9 @@ comparativa_visual <- function(id,min_ini=0,min_fin=100,que_lista=lista_seleccio
 
 corr_cruzadas <- function(id,que_lista=lista_seleccionados){
       temp <- corta_lista(id,ls=que_lista)[[1]]
-      cecefe <- ccf(temp$suave_paciente,temp$suave_terapeuta,plot = FALSE,lag.max = 57)
-      aux <- data.frame(segundos=cecefe$lag[ ,1,1]/19,correlacion=cecefe$acf[,1,1])
+      cecefe <- ccf(rank(temp$suave_paciente),rank(temp$suave_terapeuta),
+                    plot = FALSE,lag.max = 150)
+      aux <- data.frame(segundos=cecefe$lag[ ,1,1]/30,correlacion=cecefe$acf[,1,1])
       temp2 <- corta_lista(id,ls=que_lista)
       g <- ggplot(aux,aes(segundos,correlacion))+geom_col(color='orange',fill='purple')+
             ggtitle(paste(temp2[["video"]],temp2[["minutos"]],sep = "                 "))+
