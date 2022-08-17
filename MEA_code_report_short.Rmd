@@ -14,9 +14,9 @@ library(ggplot2)
 library(knitr)
 ```
 
-For each video, six regions of interest (roi) are considered. Three for each subject (patient and therapist): head, torso and legs. The exploratory analysis is done in two parts:
+For each video, six regions of interest (ROI) are considered. Three for each subject (patient and therapist): head, torso and legs. The exploratory analysis is done in two parts:
 
-1) In the first part, we look for 5 minutes segments with high lagged correlation for some roi.
+1) In the first part, we look for 5 minutes segments with high lagged correlation for some ROI.
 2) In the second part, we look for 30 second periods with high movement of both subjects. Cross correlations are performed and visualized for those high movement periods. 
 
 
@@ -63,7 +63,7 @@ kable(head(completa[['Vid5']],10),caption='Top entries for Vid5 raw data.')
 The code below generates the database _lista_seleccionados_. This contains information on segments where high correlation (with time lags) between the movements of the subjects is detected. Each of the videos in _bitacora_ is partiotioned in `r minutos_particion` minutes segments. For each segment and roi, cross correlations (wuth 3 seconds max-lags in both directions) between therapist and subject movements are performed; the maximum and the mean values for the correlations for all the lags are recorded; if either the max>0.7 or mean>0.3 the segment is added to the list. If the maximum correlation corresponds to lag 0, the segment is discarded (simultaneous movement), since the correlation in this case is most likely due to external noise.   
 
 ```{r, echo=TRUE}
-lista_seleccionados<-data.frame(matrix(ncol = 10,nrow = 0))
+lista_seleccionados<-data.frame(matrix(ncol = 12,nrow = 0))
 
 for (video in names(completa)){
       temp <- crear_lista(partition_data(completa[[video]]),
@@ -125,9 +125,9 @@ Videos are partitioned into `r 60/d` second segments. The mean amounts of moveme
 
 
 ```{r echo=FALSE}
-lista_mov_altos <- data.frame(matrix(ncol = 7,nrow = 0))  
-colnames(lista_mov_altos) <- c("video","zona","minuto_inicio","minuto_final",
-                        "mov_paciente","mov_terapeuta","mov_medio")
+lista_mov_altos <- data.frame(matrix(ncol = 15,nrow = 0))  
+#colnames(lista_mov_altos) <- c("video","zona","minuto_inicio","minuto_final",
+#                        "mov_paciente","mov_terapeuta","mov_medio")
 
 for (v in names(completa)){
     lista_mov_altos <- rbind(lista_mov_altos,

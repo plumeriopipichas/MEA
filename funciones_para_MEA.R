@@ -67,9 +67,10 @@ detecta_altos <- function(lista_datos,q=0.9){
 
 crear_lista <- function(video_partido, nombre=NA, sr=30, segundos = 300, 
                         umbral_max=0.7,umbral_mean=0.5,lag_mayor = 90){
-    selectos <- data.frame(matrix(ncol = 10,nrow = 0))  
+    selectos <- data.frame(matrix(ncol = 12,nrow = 0))  
     colnames(selectos) <- c("video","zona","num_periodo","minuto_inicio","minuto_final","acf_max",
-                            "acf_promedio","lag_acf_max","spearman_max","lag_spearman_max")
+                            "acf_promedio","lag_acf_max","spearman_max","lag_spearman_max",
+                            "sexo","clasificacion")
 
     for (i in 1:length(video_partido)){
           for (j in zonas){
@@ -103,8 +104,12 @@ crear_lista <- function(video_partido, nombre=NA, sr=30, segundos = 300,
                         aux$lag_acf_max <- round(cecefe$lag[x,1,1]/30,2)
                         aux$spearman_max <- max(abs(cecefe_s$acf))
                         aux$lag_spearman_max <- round(cecefe_s$lag[x2,1,1]/30,2)
+                        x <- which(bitacora$file == aux$video)
+                        aux$sexo <- bitacora$sexo[x]
+                        aux$clasificacion <- bitacora$clasificacion[x]
                         selectos<-rbind(selectos,aux)
                         rm(x,y,x2,y2)
+                        
                     }              
               }
               else{
@@ -120,10 +125,11 @@ crear_lista <- function(video_partido, nombre=NA, sr=30, segundos = 300,
 #   hay mucho movimiento, tanto del paciente como del terapeuta *donde mucho es que sea mayor al cuantil dado*     
 
 crea_lista_movs <- function(vp,q=0.71,nombre_video=NA,sr=30){
-          selectos <-data.frame(matrix(ncol = 13,nrow = 0))  
+          selectos <-data.frame(matrix(ncol = 15,nrow = 0))  
           colnames(selectos) <- c("video","zona","num_periodo","minuto_inicio","minuto_final",
                                   "mov_paciente","mov_terapeuta","mov_medio","acf_max",
-                                  "lag_acf_max","spearman_max","lag_spearman_max","lidera")
+                                  "lag_acf_max","spearman_max","lag_spearman_max","lidera",
+                                  "sexo","clasificacion")
           
           for (k in zonas){
               temp<-list()
@@ -169,6 +175,9 @@ crea_lista_movs <- function(vp,q=0.71,nombre_video=NA,sr=30){
                   if (renglon$lag_spearman_max< -0.1 ){
                      renglon$lidera="paciente"
                   }
+                  x <- which(bitacora$file == renglon$video)
+                  renglon$sexo <- bitacora$sexo[x]
+                  renglon$clasificacion <- bitacora$clasificacion[x]
                   selectos<-rbind(selectos,renglon)
               }
           }          
