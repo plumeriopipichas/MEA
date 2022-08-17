@@ -1,27 +1,27 @@
-file,sampling_rate,id_paciente,date,corte_inicial,corte_final,paciente,terapeuta
-Vid0,30,1,24/04/2012,0,0,Enrique:TNP,Iván
-Vid5,30,1,01/05/2012,0,0,Enrique:TNP,Iván
-Vid6,30,1,03/05/2012,0,0,Enrique:TNP,Iván
-Vid7Inv,30,1,14/03/2013,0,0,Enrique:TNP,Iván
-Vid8Inv,30,1,19/03/2013,0,0,Enrique:TNP,Iván
-Vid9Inv,30,1,21/03/2013,0,0,Enrique:TNP,Iván
-Vid10Inv,30,1,26/03/2013,0,0,Enrique:TNP,Iván
-Vid11Inv,30,1,14/04/2013,0,0,Enrique:TNP,Iván
-Vid12,30,71,23/01/2014,0,0,mujer:?,Iván
-Vid13,30,134,02/09/2014,0,0,Solbeit:TNP,Iván
-Vid14,30,870,20/10/2015,0,0,Mujer:control,Iván
-Vid15,30,160,19/08/2015,0,0,Dafne:control,Iván
-Vid16,30,810,06/08/2014,0,0,Mujer:?,Iván
-Vid17,30,573,01/12/2015,0,0,Mujer:?,Iván
-Vid18,30,847,12/08/2015,0,0,Hombre:control,Iván
-Vid19,30,403,25/08/2014,0,0,Erick:TLP,Iván
-Vid20,30,377,19/08/2014,0,0,Lydia:TLP,Iván
-Vid21,30,746,25/08/2014,0,0,Mujer:?,Iván
-Vid22,30,533,17/11/2015,0,0,Dafne:control,Iván
-Vid23,30,291,13/08/2014,0,0,Mujer:?,Iván
-Vid24,30,374-1,11/09/2015,0,0,Mujer:?,Andrés
-Vid25,30,202-1,20/11/2015,0,0,Hombre:control,Andrés
-Vid26,30,315-1,20/02/2014,0,0,Mujer:?maestra,Andrés
-Vid27,30,296-1,20/02/2014,0,0,Hombre:control,Andrés
-Vid28,30,AM_-1,,0,0,Enfermera,Andrés
-Vid29,30,LL_2-1,,0,0,Laura,Andrés
+file,sampling_rate,id_paciente,date,corte_inicial,corte_final,paciente,terapeuta,sexo,clasificacion
+Vid0,30,1,24/04/2012,13,0,Enrique:TNP,Iván,H,paciente
+Vid5,30,1,01/05/2012,19,0,Enrique:TNP,Iván,H,paciente
+Vid6,30,1,03/05/2012,8,27,Enrique:TNP,Iván,H,paciente
+Vid7Inv,30,1,14/03/2013,12,15,Enrique:TNP,Iván,H,paciente
+Vid8Inv,30,1,19/03/2013,11,36,Enrique:TNP,Iván,H,paciente
+Vid9Inv,30,1,21/03/2013,6,19,Enrique:TNP,Iván,H,paciente
+Vid10Inv,30,1,26/03/2013,5,30,Enrique:TNP,Iván,H,paciente
+Vid11Inv,30,1,14/04/2013,7,21,Enrique:TNP,Iván,H,paciente
+Vid12,30,71,23/01/2014,9,0,Iraní:TLP,Iván,M,paciente
+Vid13,30,134,02/09/2014,7,0,Solverg:TLP/TNP,Iván,M,paciente
+Vid14,30,870,20/10/2015,10,0,Yanelle:control,Iván,M,control
+Vid15,30,160,19/08/2015,8,0,Mujer:control,Iván,M,control
+Vid16,30,810,06/08/2014,7,0,Sandra:TLP,Iván,M,paciente
+Vid17,30,573,01/12/2015,8,0,Mujer:? Control,Iván,M,control
+Vid18,30,847,12/08/2015,10,0,Sergio:control,Iván,H,control
+Vid19,30,403,25/08/2014,9,0,Erick:TLP,Iván,H,paciente
+Vid20,30,377,19/08/2014,7,0,Lydia:TLP,Iván,M,paciente
+Vid21,30,746,25/08/2014,12,0,AndreaAlejandra:TLP,Iván,M,paciente
+Vid22,30,533,17/11/2015,5,7,Dafne:control,Iván,M,control
+Vid23,30,291,13/08/2014,13,0,Berenice:TLP/TNP,Iván,M,paciente
+Vid24,30,374-1,11/09/2015,8,11,Vivianaimpulsiva?,Andrés,M,paciente
+Vid25,30,202-1,20/11/2015,5,7,Benito: CTRL,Andrés,H,control
+Vid26,30,315-1,20/02/2014,165,49,PatriciaMaestra: TLP,Andrés,M,paciente
+Vid27,30,296-1,20/02/2014,45,69,JuanOftalmól:txDistímico,Andrés,H,paciente
+Vid28,30,AM_-1,,26,150,ÁngelaEnfermera: TLP,Andrés,M,paciente
+Vid29,30,LL_2-1,,47,41,LauraContadora: TLP,Andrés,M,paciente

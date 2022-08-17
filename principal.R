@@ -31,7 +31,7 @@ for (v in 1:length(bitacora$file)){
 # acf grandes. lista_mov_altos es para detectar periodos de 30 segundos con mucho movimiento de ambos sujetos---------------------------
 
 
-lista_seleccionados<-data.frame(matrix(ncol = 10,nrow = 0))
+lista_seleccionados<-data.frame(matrix(ncol = 12,nrow = 0))
 
 for (video in names(completa)){
       print(video)
@@ -41,13 +41,16 @@ for (video in names(completa)){
 }
 
 lista_seleccionados<-cbind(id=1:dim(lista_seleccionados)[1],lista_seleccionados)
+
 lista_seleccionados<-filter(lista_seleccionados,abs(lag_spearman_max)>0.025)
 
 print("Buscando regiones de 30seg con mas movimiento...")
 
-lista_mov_altos <- data.frame(matrix(ncol = 7,nrow = 0))  
-colnames(lista_mov_altos) <- c("video","zona","minuto_inicio","minuto_final",
-                               "mov_paciente","mov_terapeuta","mov_medio")
+lista_mov_altos <- data.frame(matrix(ncol = 15,nrow = 0))  
+colnames(lista_mov_altos) <- c("video","zona","num_periodo","minuto_inicio","minuto_final",
+                               "mov_paciente","mov_terapeuta","mov_medio","acf_max",
+                               "lag_acf_max","spearman_max","lag_spearman_max","lidera",
+                               "sexo","clasificacion")
 
 for (v in names(completa)){
   print(v)
