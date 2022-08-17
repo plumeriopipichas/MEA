@@ -121,7 +121,7 @@ d = 0.5
 quantile = 0.85
 ```
 
-Videos are partitioned into `r 60/d` second segments. The mean amounts of movement for each roi are calculated (as recorded by the MEA software). If the means of both the therapist and patient are in the top `r 100-100*quantile` quantile, the corresponding data for that roi and time is registered in the list _lista_mov_altos_. 
+Videos are partitioned into `r 60*d` second segments. The mean amounts of movement for each roi are calculated (as recorded by the MEA software). If the means of both the therapist and patient are in the top `r 100-100*quantile` quantile, the corresponding data for that roi and time is registered in the list _lista_mov_altos_. 
 
 
 ```{r echo=FALSE}
