@@ -1,0 +1,20 @@
+file,sampling_rate,paciente,fecha,corte_inicial,corte_final,framOrig,framCort,TipoEntrevista,sexo,clasificacion,nombre,terapeuta,DX
+Vid0,30,1,24/04/2012,13,0,72094,72081,E,H,T,Enrique:TLP/TNP,Iván,Longitud/A
+Vid12,30,71,23/01/2014,9,0,39734,39725,N,M,T,Iraní:TLP,Iván,B
+Vid13,30,134,02/09/2014,7,0,66644,66637,N,M,T,Solverg:TLP/TNP,Iván,B
+Vid14,30,870,20/10/2015,10,0,72013,72003,S,M,C,Yanelle:control,Iván,C
+Vid15,30,160,19/08/2015,8,0,78802,78794,S,M,C,Mujer:control,Iván,C
+Vid16,30,810,06/08/2014,7,0,67499,67492,N,M,T,Sandra:TLP,Iván,B
+Vid17,30,573,01/12/2015,8,0,46663,46655,S,M,C,Mujer:? Control,Iván,C
+Vid18,30,847,12/08/2015,10,0,66119,66109,S,H,C,Sergio:control,Iván,D
+Vid19,30,403,25/08/2014,9,0,67229,67220,N,H,T,Erick:TLP,Iván,A
+Vid20,30,377,19/08/2014,7,0,80279,80272,N,M,T,Lydia:TLP,Iván,B
+Vid21,30,746,25/08/2014,12,0,61306,61294,N,M,T,AndreaAlejandra:TLP,Iván,B
+Vid22,30,533,17/11/2015,5,7,44579,44567,S,M,C,Dafne:control,Iván,C
+Vid23,30,291,13/08/2014,13,0,75674,75661,N,M,T,Berenice:TLP/TNP,Iván,B
+Vid24,30,374-1,11/09/2015,8,11,93924,93905,S,M,T,VivianaTLP,Andrés,B
+Vid25,30,202-1,20/11/2015,5,7,55011,54999,S,H,C,Benito: CTRL,Andrés,D
+Vid26,30,315-1,20/02/2014,165,49,97887,97673,N,M,T,PatriciaMaestra: TLP,Andrés,B
+Vid27,30,296-1,20/02/2014,45,69,88650,88536,N,H,T,JuanOftalmól:txDistímico,Andrés,A
+Vid28,30,AM_1-1,,26,150,88292,88116,N,M,T,ÁngelaEnfermera: TLP,Andrés,B
+Vid29,30,LL_2-1,,47,41,76395,76307,N,M,T,LauraContadora: TLP,Andrés,B
