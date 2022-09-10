@@ -17,13 +17,12 @@ library(knitr)
 ```{r, include=FALSE,echo=FALSE}
 zonas <- c("cabeza","torso","piernas")
 rois <- c(paste(zonas,"paciente",sep="_"),paste(zonas,"terapeuta",sep="_"))
-bitacora <- read.csv("bitacora_sesionesiniciales.csv",encoding = "UTF-8")
+bitacora <- read.csv("bitacora_sesiones_iniciales.csv",encoding = "UTF-8")
 minutos_particion <- 5
 ```
 
 
 The MEA data obtained from videos of therapy sessions is analysed. All `r ncol(bitacora)` videos correspond to the first session with a different patient.  In each case, six regions of interest (ROI) are considered, three for each subject (patient and therapist): head, torso and legs. The exploratory analysis is done in two parts:
-
 
 
 
@@ -34,16 +33,6 @@ The MEA data obtained from videos of therapy sessions is analysed. All `r ncol(b
 
 
 ### First part. 
-
-
-
-
-Basic information of the `r dim(bitacora)[1]` videos is registered in table _bitacora_. Here we show the top entries of this table.   
-
-```{r bitacora, echo=FALSE}
-cuantos=5
-kable(head(bitacora,cuantos))
-```
 
 
 ```{r completa, include=FALSE}
@@ -59,6 +48,20 @@ for (v in 1:length(bitacora$file)){
     write.csv(x,path,row.names = FALSE)
     completa[[bitacora$file[v]]] <- x
 }
+
+temp<-list()
+for(j in names(completa)){
+    print(j)
+    temp<-c(temp,nrow(completa[[j]]))
+}
+print(length(temp))
+```
+
+Basic information of the `r dim(bitacora)[1]` videos is registered in table _bitacora_. Here we show the top entries of this table.   
+
+```{r bitacora, echo=FALSE}
+cuantos=5
+kable(head(bitacora,cuantos))
 ```
 
 The list _completa_ contains the data for each of the videos listed in _bitacora_. As an example, _completa[['Vid5']]_ is a data set with `r nrow(completa[['Vid5']])` observations. At a sampling rate of 30 frames per second, this corresponds to 
@@ -74,10 +77,12 @@ The code below generates the database _lista_seleccionados_. This contains infor
 lista_seleccionados<-data.frame(matrix(ncol = 12,nrow = 0))
 
 for (video in names(completa)){
-      temp <- crear_lista(partition_data(completa[[video]]),
-                          nombre = video,umbral_max = 0.7,umbral_mean = 0.5)
-      names(lista_seleccionados)<-names(temp)
-      lista_seleccionados<-rbind(lista_seleccionados,temp)
+  print(video)
+  temp <- crear_lista(partition_data(completa[[video]]),
+                      nombre = video,umbral_max = 0.7,umbral_mean = 0.5,
+                      segundos = 60*minutos_particion)
+  names(lista_seleccionados)<-names(temp)
+  lista_seleccionados<-rbind(lista_seleccionados,temp)
 }
 
 lista_seleccionados<-cbind(id=1:dim(lista_seleccionados)[1],lista_seleccionados)
@@ -87,9 +92,8 @@ write.csv(lista_seleccionados,"lista_seleccionados.csv",row.names = FALSE)
 ```
 
 ```{r echo=FALSE}
-kable(lista_seleccionados,caption="Five minute segments with high lagged correlation. Lags are shown in seconds, with positive values corresponding to lags where the therapist leads.")
+kable(lista_seleccionados,caption="Three minute segments with high lagged correlation. Lags are shown in seconds, with positive values corresponding to lags where the therapist leads.")
 ```
-
 
 
 We include two functions functions _comparativa_visual_ and _corr_cruzadas_ for visualizing the data of the segments with high correlation. The fundamental input for both functions is the number in the _id_ column of _lista_seleccionados_.
