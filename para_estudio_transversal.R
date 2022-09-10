@@ -52,11 +52,12 @@ write.csv(bitacora,"bitacora_aumentada.csv",row.names = FALSE)
 #segunda
 
 d = 0.5
-quantile = 0.85
+quantile = 0.8
 
 lista_mov_altos <- data.frame(matrix(ncol = 15,nrow = 0))  
 
 for (v in names(completa)){
+  print(v)
   lista_mov_altos <- rbind(lista_mov_altos,
                            crea_lista_movs(partition_data(completa[[v]],minutos=d),
                                            nombre_video = v,q=quantile))    
