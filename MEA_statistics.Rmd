@@ -1,0 +1,203 @@
+---
+title: "Statistical Analysis of MEA data."
+author: "Federico Menéndez Conde"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#source("MEA_functions.R")
+library(dplyr)
+library(ggplot2)
+library(knitr)
+```
+
+Hereby, data generated in the "Transversal Analysis of MEA data" document is analysed. 
+
+First, we load the database _MEA_segments_ that we will use to perform the study. This is the list of the 30 second periods with more movement in the MEA videos. The criterion used is for the movement in the period to be higher than the median, and that this has to hold for both subjects (patient and therapist).
+
+```{r, echo=FALSE}
+MEA_segments <- read.csv("lista_mov_altos.csv")
+x<-which(MEA_segments$type=="C")
+y<-which(MEA_segments$type=="T")
+MEA_segments$type[x] <- "Control"
+MEA_segments$type[y] <- "Diagnosed"
+x<-which(MEA_segments$sex=="M")
+y<-which(MEA_segments$sex=="H")
+MEA_segments$sex[x] <- "F"
+MEA_segments$sex[y] <- "M"
+MEA_segments<-mutate(MEA_segments,delta_mov=mov_therapist-mov_patient)
+```
+
+
+The database has `r nrow(MEA_segments)` observations of `r ncol(MEA_segments)` variables. 
+
+Below, we show the entries of a few observations in the database.
+
+```{r, echo=FALSE}
+kable(head(MEA_segments))
+```
+
+An overview of the variables of interest, classified into diagnosed subjects vs control subjects.
+
+
+```{r, echo=FALSE}
+segmented_type <- group_by(MEA_segments,type)
+overview_type <- summarise(segmented_type,observed=n(),mean_max_correlation=mean(spearman_max),sd_correlation=sd(spearman_max),mean_lag=mean(lag_spearman_max),sd_lag=sd(lag_spearman_max),mean_therapist_mov=mean(mov_therapist),mean_patient_mov=mean(mov_patient))
+kable(overview_type)
+```
+
+Overview of the same data, now segmented by gender:
+
+```{r, echo=FALSE}
+segmented_sex <- group_by(MEA_segments,sex)
+overview_sex <- summarise(segmented_sex,observed=n(),mean_max_correlation=mean(spearman_max),sd_correlation=sd(spearman_max),mean_lag=mean(lag_spearman_max),sd_lag=sd(lag_spearman_max),mean_therapist_mov=mean(mov_therapist),mean_patient_mov=mean(mov_patient))
+kable(overview_sex)
+```
+
+
+Segmented by both criteria:
+
+```{r, echo=FALSE}
+segmented_both <- group_by(MEA_segments,type,sex)
+overview_both <- summarise(segmented_both,observed=n(),mean_max_correlation=mean(spearman_max),sd_correlation=sd(spearman_max),mean_lag=mean(lag_spearman_max),sd_lag=sd(lag_spearman_max),mean_therapist_mov=mean(mov_therapist),mean_patient_mov=mean(mov_patient))
+kable(overview_both)
+```
+
+Segmented by region of interest:
+
+```{r, echo=FALSE}
+segmented_roi <- group_by(MEA_segments,zone)
+overview_roi <- summarise(segmented_roi,observed=n(),mean_max_correlation=mean(spearman_max),sd_correlation=sd(spearman_max),mean_lag=mean(lag_spearman_max),sd_lag=sd(lag_spearman_max),mean_therapist_mov=mean(mov_therapist),mean_patient_mov=mean(mov_patient))
+kable(overview_roi)
+```
+
+Segmented by roi and classification:
+
+```{r, echo=FALSE}
+segmented_roi2 <- group_by(MEA_segments,type,zone)
+overview_roi2 <- summarise(segmented_roi2,observed=n(),mean_max_correlation=mean(spearman_max),sd_correlation=sd(spearman_max),mean_lag=mean(lag_spearman_max),sd_lag=sd(lag_spearman_max),mean_therapist_mov=mean(mov_therapist),mean_patient_mov=mean(mov_patient))
+kable(overview_roi2)
+```
+
+
+In what follows, we perform Welch t-tests in order to establish if there are difference of means between the gropus (M/F and Control/Diagnosed) for variables of interest:
+
+```{r, echo=FALSE}
+diagnosed_list<-filter(MEA_segments,type=='Diagnosed')
+control_list<-filter(MEA_segments,type=='Control')
+male_list<-filter(MEA_segments,sex=='M')
+female_list<-filter(MEA_segments,sex=='F')
+control_male_list<-filter(MEA_segments,type=='Control',sex=='M')
+control_female_list<-filter(MEA_segments,type=='Control',sex=='F')
+diagnosed_male_list<-filter(MEA_segments,type=='Diagnosed',sex=='M')
+diagnosed_female_list<-filter(MEA_segments,type=='Diagnosed',sex=='F')
+control_head_list<-filter(MEA_segments,type=='Control',zone=='head')
+control_torso_list<-filter(MEA_segments,type=='Control',zone=='torso')
+control_legs_list<-filter(MEA_segments,type=='Control',zone=='legs')
+diagnosed_head_list<-filter(MEA_segments,type=='Diagnosed',zone=='head')
+diagnosed_torso_list<-filter(MEA_segments,type=='Diagnosed',zone=='torso')
+diagnosed_legs_list<-filter(MEA_segments,type=='Diagnosed',zone=='legs')
+```
+
+1)Correlation.
+
+The variable considered is the maximum value of the crossed correlations for the movement of both subjects. The crossed correlations taken from a 3 second lag in both directions. 
+
+#The mean correlations are similar for all groups, and thus no significant difference was found. 
+
+Comparison of Control vs Diagnosed:
+
+```{r, echo=FALSE}
+t.test(control_list$spearman_max,diagnosed_list$spearman_max)
+```
+
+#```{r, echo=FALSE}
+#t.test(male_list$spearman_max,female_list$spearman_max)
+#```
+
+```{r, echo=FALSE}
+t.test(control_male_list$spearman_max,diagnosed_male_list$spearman_max)
+```
+
+```{r, echo=FALSE}
+t.test(control_female_list$spearman_max,diagnosed_female_list$spearman_max)
+```
+
+```{r, echo=FALSE}
+t.test(control_head_list$spearman_max,diagnosed_head_list$spearman_max)
+```
+
+```{r, echo=FALSE}
+t.test(control_torso_list$spearman_max,diagnosed_torso_list$spearman_max)
+```
+
+```{r, echo=FALSE}
+t.test(control_legs_list$spearman_max,diagnosed_legs_list$spearman_max)
+```
+
+2) Lag of the maximum correlation. 
+
+This variable is the difference in seconds where the maximum crossed correlation is found. Positive values correspond to the therapist leading the movements and negative values correspond to the patient leading.
+
+```{r, echo=FALSE}
+t.test(control_list$lag_spearman_max,diagnosed_list$lag_spearman_max)
+```
+
+#```{r, echo=FALSE}
+#t.test(male_list$lag_spearman_max,female_list$lag_spearman_max)
+#```
+
+```{r, echo=FALSE}
+t.test(control_male_list$lag_spearman_max,diagnosed_male_list$lag_spearman_max)
+```
+
+```{r, echo=FALSE}
+t.test(control_female_list$lag_spearman_max,diagnosed_female_list$lag_spearman_max)
+```
+
+```{r, echo=FALSE}
+t.test(control_head_list$lag_spearman_max,diagnosed_head_list$lag_spearman_max)
+```
+
+```{r, echo=FALSE}
+t.test(control_torso_list$lag_spearman_max,diagnosed_torso_list$lag_spearman_max)
+```
+
+```{r, echo=FALSE}
+t.test(control_legs_list$lag_spearman_max,diagnosed_legs_list$lag_spearman_max)
+```
+
+3) Movement difference
+
+Difference of movement therapist minus patient.
+
+```{r, echo=FALSE}
+t.test(control_list$delta_mov,diagnosed_list$delta_mov)
+```
+
+#```{r, echo=FALSE}
+#t.test(male_list$delta_mov,female_list$delta_mov)
+#```
+
+```{r, echo=FALSE}
+t.test(control_male_list$delta_mov,diagnosed_male_list$delta_mov)
+```
+
+```{r, echo=FALSE}
+t.test(control_female_list$delta_mov,diagnosed_female_list$delta_mov)
+```
+
+```{r, echo=FALSE}
+t.test(control_head_list$delta_mov,diagnosed_head_list$delta_mov)
+```
+
+```{r, echo=FALSE}
+t.test(control_torso_list$delta_mov,diagnosed_torso_list$delta_mov)
+```
+
+```{r, echo=FALSE}
+t.test(control_legs_list$delta_mov,diagnosed_legs_list$delta_mov)
+```
+
