@@ -1,0 +1,178 @@
+---
+title: "Statistical Analysis of MEA data."
+author: "Federico Menéndez Conde"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#source("MEA_functions.R")
+library(dplyr)
+library(ggplot2)
+library(knitr)
+```
+
+Hereby, data generated in the "Transversal Analysis of MEA data" document is analysed. 
+
+First, we load the database _MEA_segments_ that we will use to perform the study. This is the list of the 30 second periods with more movement in the MEA videos. The criterion used is for the movement in the period to be higher than the median, and that this has to hold for both subjects (patient and therapist).
+
+```{r, echo=FALSE}
+MEA_segments <- read.csv("lista_mov_altos.csv")
+x<-which(MEA_segments$type=="C")
+y<-which(MEA_segments$type=="T")
+MEA_segments$type[x] <- "Control"
+MEA_segments$type[y] <- "Diagnosed"
+x<-which(MEA_segments$sex=="M")
+y<-which(MEA_segments$sex=="H")
+MEA_segments$sex[x] <- "F"
+MEA_segments$sex[y] <- "M"
+MEA_segments<-mutate(MEA_segments,delta_mov=mov_therapist-mov_patient)
+```
+
+The database has `r nrow(MEA_segments)` observations of `r ncol(MEA_segments)` variables. 
+
+Below, we show the entries of a few observations in the database.
+
+```{r, echo=FALSE}
+kable(head(MEA_segments,10))
+```
+
+Take a look into the lags where the maximum positive and negative cross correlations are found.
+
+```{r, echo=FALSE}
+ggplot(MEA_segments,aes(x = lag_spearman_max,spearman_max,color=type))+geom_point()
+ggplot(MEA_segments,aes(x = lag_spearman_min,spearman_min,color=type))+geom_point()
+```
+
+
+
+```{r, echo=FALSE}
+MEA_segments_pos<-filter(MEA_segments,correl=="positive")%>%
+  filter(abs(lag_spearman_max)>0.25)%>%
+  filter(spearman_max>0.35)
+MEA_segments_neg<-filter(MEA_segments,correl=="negative")%>%
+  filter(abs(lag_spearman_min)>0.25)%>%
+  filter(spearman_min < -0.35)
+```
+
+Split the database in two: database _MEA_segments_pos_ and _MEA_segments_neg_ according with the type of correlation found (positive or negative). Remove the entries with lags small (less than a quarter of a second). Also, keep only the entries with moderate and high cross correlations (absolute values above 0.35).
+
+With such criteria, there are `r nrow(MEA_segments_pos)` with positive correlation and `r nrow(MEA_segments_neg)` with negative correlation. 
+Visualize the lags
+
+```{r, echo=FALSE}
+plot(density(MEA_segments_pos$lag_spearman_max,bw=0.8))
+plot(density(MEA_segments_neg$lag_spearman_min,bw=0.8))
+```
+
+And the lags with the value of the correlation
+
+```{r, echo=FALSE}
+ggplot(MEA_segments_pos,aes(x = lag_spearman_max,spearman_max,color=type))+geom_point()
+ggplot(MEA_segments_neg,aes(x = lag_spearman_min,spearman_min,color=type))+geom_point()
+```
+
+An overview of the variables of interest, classified into diagnosed subjects vs control subjects.
+
+```{r, echo=FALSE}
+segmented_type_pos <- group_by(MEA_segments,type)
+overview_type_pos <- summarise(segmented_type_pos,observed=n(),mean_max_correlation=mean(spearman_max),sd_correlation=sd(spearman_max),mean_lag=mean(lag_spearman_max),sd_lag=sd(lag_spearman_max),mean_therapist_mov=mean(mov_therapist),mean_patient_mov=mean(mov_patient))
+kable(overview_type_pos)
+```
+
+```{r, echo=FALSE}
+segmented_type_pos <- group_by(MEA_segments,type)
+overview_type_pos <- summarise(segmented_type_pos,observed=n(),mean_max_correlation=mean(spearman_max),sd_correlation=sd(spearman_max),mean_lag=mean(lag_spearman_max),sd_lag=sd(lag_spearman_max),mean_therapist_mov=mean(mov_therapist),mean_patient_mov=mean(mov_patient))
+kable(overview_type_pos)
+```
+
+Chi-squared tests for independence for type (Control/Diagnosed) vs leading (Patient/Therapist)
+
+All subjects. Positive correlations. Who leads.
+```{r, echo=FALSE}
+table(MEA_segments_pos$type,MEA_segments_pos$leads)
+chisq.test(MEA_segments_pos$type,MEA_segments_pos$leads,)
+fisher.test(MEA_segments_pos$type,MEA_segments_pos$leads)
+```
+
+
+All subjects. Negative correlations. Who leads.
+```{r, echo=FALSE}
+table(MEA_segments_neg$type,MEA_segments_neg$leads)
+chisq.test(MEA_segments_neg$type,MEA_segments_neg$leads)
+fisher.test(MEA_segments_neg$type,MEA_segments_neg$leads)
+```
+
+
+All subjects. Both signs. Welch t-tests for means of the lags.
+```{r, echo=FALSE}
+
+diagnosed_list_pos<-filter(MEA_segments_pos,type=='Diagnosed')
+control_list_pos<-filter(MEA_segments_pos,type=='Control')
+diagnosed_list_neg<-filter(MEA_segments_neg,type=='Diagnosed')
+control_list_neg<-filter(MEA_segments_neg,type=='Control')
+t.test(diagnosed_list_pos$spearman_max,control_list_pos$spearman_max)
+t.test(diagnosed_list_neg$lag_spearman_max,control_list_neg$lag_spearman_max)
+```
+
+All subjects. Is the correlation positive or negative.
+```{r, echo=FALSE}
+table(MEA_segments$type,MEA_segments$correl)
+chisq.test(MEA_segments$type,MEA_segments$correl)
+fisher.test(MEA_segments$type,MEA_segments$correl)
+```
+
+
+Same analysis, segmenting by sex of the patient.
+
+
+Males. Positive correlation. Who leads.
+```{r, echo=FALSE}
+MEA_segments_pos_m<-filter(MEA_segments_pos,sex=="M")
+table(MEA_segments_pos_m$type,MEA_segments_pos_m$leads)
+chisq.test(MEA_segments_pos_m$type,MEA_segments_pos_m$leads,)
+fisher.test(MEA_segments_pos_m$type,MEA_segments_pos_m$leads)
+```
+
+
+Males. Negative correlation. Who leads.
+```{r, echo=FALSE}
+MEA_segments_neg_m<-filter(MEA_segments_neg,sex=="M")
+table(MEA_segments_neg_m$type,MEA_segments_neg_m$leads)
+chisq.test(MEA_segments_neg_m$type,MEA_segments_neg_m$leads)
+fisher.test(MEA_segments_neg_m$type,MEA_segments_neg_m$leads)
+```
+
+Males. Is the correlation positive or negative.
+```{r, echo=FALSE}
+MEA_segments_m<-filter(MEA_segments,sex=="M")
+table(MEA_segments_m$type,MEA_segments_m$correl)
+chisq.test(MEA_segments_m$type,MEA_segments_m$correl)
+fisher.test(MEA_segments_m$type,MEA_segments_m$correl)
+```
+
+Females. Positive correlations. Who leads.
+```{r, echo=FALSE}
+MEA_segments_pos_f<-filter(MEA_segments_pos,sex=="F")
+table(MEA_segments_pos_f$type,MEA_segments_pos_f$leads)
+chisq.test(MEA_segments_pos_f$type,MEA_segments_pos_f$leads,)
+fisher.test(MEA_segments_pos_f$type,MEA_segments_pos_f$leads)
+```
+
+Females. Negative correlation. Who leads.
+```{r, echo=FALSE}
+MEA_segments_neg_f<-filter(MEA_segments_neg,sex=="M")
+table(MEA_segments_neg_f$type,MEA_segments_neg_f$leads)
+chisq.test(MEA_segments_neg_f$type,MEA_segments_neg_f$leads)
+fisher.test(MEA_segments_neg_f$type,MEA_segments_neg_f$leads)
+```
+
+Females. Is the correlation positive or negative.
+```{r, echo=FALSE}
+MEA_segments_f<-filter(MEA_segments,sex=="F")
+table(MEA_segments_f$type,MEA_segments_f$correl)
+chisq.test(MEA_segments_f$type,MEA_segments_f$correl)
+fisher.test(MEA_segments_f$type,MEA_segments_f$correl)
+```
+
