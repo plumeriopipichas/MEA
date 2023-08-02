@@ -13,12 +13,10 @@ library(ggplot2)
 library(knitr)
 ```
 
-Hereby, data generated in the "Transversal Analysis of MEA data" document is analysed. 
+Hereby, the database _MEA_segments_  is analysed. This is the list of the 30 second periods with the most movement in the MEA videos. The criterion used is for the movement in the period to be higher than the median, and that this has to hold for both subjects (patient and therapist).
 
-First, we load the database _MEA_segments_ that we will use to perform the study. This is the list of the 30 second periods with the most movement in the MEA videos. The criterion used is for the movement in the period to be higher than the median, and that this has to hold for both subjects (patient and therapist).
-
-```{r, echo=FALSE}
-MEA_segments <- read.csv("lista_mov_altos.csv")%>%
+```{r, echo=TRUE}
+MEA_segments <- read.csv("MEA_segments.csv")%>%
   filter(mov_patient>1,mov_therapist>1)
 x<-which(MEA_segments$type=="C")
 y<-which(MEA_segments$type=="T")
@@ -39,13 +37,6 @@ Below, we show the entries of a few observations in the database.
 kable(head(MEA_segments,10))
 ```
 
-Take a look into the lags where the maximum positive and negative cross correlations are found.
-
-```{r, echo=FALSE}
-ggplot(MEA_segments,aes(x = lag_spearman_max,spearman_max,color=type))+geom_point()
-ggplot(MEA_segments,aes(x = lag_spearman_min,spearman_min,color=type))+geom_point()
-```
-
 
 
 ```{r, echo=FALSE}
@@ -62,25 +53,11 @@ Split the database in two: database _MEA_segments_pos_ and _MEA_segments_neg_ ac
 
 With such criteria, there are `r nrow(MEA_segments_pos)` segments with positive correlation and `r nrow(MEA_segments_neg)` segments with negative correlation. 
 
-Visualize the lags for each sign.
-
-```{r, echo=FALSE}
-plot(density(MEA_segments_pos$lag_spearman_max,bw=0.8))
-plot(density(MEA_segments_neg$lag_spearman_min,bw=0.8))
-```
-
-And the lags with the value of the correlation, coloring according to the type of subject (control or diagnosed).
-
-```{r, echo=FALSE}
-ggplot(MEA_segments_pos,aes(x = lag_spearman_max,spearman_max,color=type))+geom_point()
-ggplot(MEA_segments_neg,aes(x = lag_spearman_min,spearman_min,color=type))+geom_point()
-```
-
 An overview of the variables of interest, classified into diagnosed subjects vs control subjects.
 
 For all the data:
 
-```{r, echo=FALSE}
+```{r, echo=TRUE}
 segmented_type <- group_by(MEA_segments,type)
 overview_type <- summarise(segmented_type,observed=n(),mean_max_correlation=mean(spearman_max),sd_correlation=sd(spearman_max),mean_lag=mean(lag_spearman_max),sd_lag=sd(lag_spearman_max),mean_therapist_mov=mean(mov_therapist),mean_patient_mov=mean(mov_patient))
 kable(overview_type)
@@ -88,7 +65,7 @@ kable(overview_type)
 
 For the data with positive correlations:
 
-```{r, echo=FALSE}
+```{r, echo=TRUE}
 segmented_type_pos <- group_by(MEA_segments_pos,type)
 overview_type_pos <- summarise(segmented_type_pos,observed=n(),mean_max_correlation=mean(spearman_max),sd_correlation=sd(spearman_max),mean_lag=mean(lag_spearman_max),sd_lag=sd(lag_spearman_max),mean_therapist_mov=mean(mov_therapist),mean_patient_mov=mean(mov_patient))
 kable(overview_type_pos)
@@ -96,7 +73,7 @@ kable(overview_type_pos)
 
 For the data with negative correlations:
 
-```{r, echo=FALSE}
+```{r, echo=TRUE}
 segmented_type_neg <- group_by(MEA_segments_neg,type)
 overview_type_neg <- summarise(segmented_type_neg,observed=n(),mean_max_correlation=mean(spearman_max),sd_correlation=sd(spearman_max),mean_lag=mean(lag_spearman_max),sd_lag=sd(lag_spearman_max),mean_therapist_mov=mean(mov_therapist),mean_patient_mov=mean(mov_patient))
 kable(overview_type_neg)
@@ -107,7 +84,7 @@ Splitting into males and females.
 All the data for males:
 
 
-```{r, echo=FALSE}
+```{r, echo=TRUE}
 segmented_type_m <- filter(MEA_segments,sex=="M")%>%
         group_by(type)
 overview_type_m <- summarise(segmented_type_m,observed=n(),mean_max_correlation=mean(spearman_max),sd_correlation=sd(spearman_max),mean_lag=mean(lag_spearman_max),sd_lag=sd(lag_spearman_max),mean_therapist_mov=mean(mov_therapist),mean_patient_mov=mean(mov_patient))
@@ -127,7 +104,7 @@ kable(overview_type_m_pos)
 
 Males and negative correlation
 
-```{r, echo=FALSE}
+```{r, echo=TRUE}
 segmented_type_m_neg <- filter(MEA_segments_neg,sex=="M")%>%
         group_by(type)
 overview_type_m_neg <- summarise(segmented_type_m_neg,observed=n(),mean_max_correlation=mean(spearman_max),sd_correlation=sd(spearman_max),mean_lag=mean(lag_spearman_max),sd_lag=sd(lag_spearman_max),mean_therapist_mov=mean(mov_therapist),mean_patient_mov=mean(mov_patient))
@@ -136,7 +113,7 @@ kable(overview_type_m_neg)
 
 All the data for females:
 
-```{r, echo=FALSE}
+```{r, echo=TRUE}
 segmented_type_f <- filter(MEA_segments,sex=="F")%>%
         group_by(type)
 overview_type_f <- summarise(segmented_type_f,observed=n(),mean_max_correlation=mean(spearman_max),sd_correlation=sd(spearman_max),mean_lag=mean(lag_spearman_max),sd_lag=sd(lag_spearman_max),mean_therapist_mov=mean(mov_therapist),mean_patient_mov=mean(mov_patient))
@@ -145,7 +122,7 @@ kable(overview_type_f)
 
 Females and positive correlation
 
-```{r, echo=FALSE}
+```{r, echo=TRUE}
 segmented_type_f_pos <- filter(MEA_segments_pos,sex=="F")%>%
         group_by(type)
 overview_type_f_pos <- summarise(segmented_type_f_pos,observed=n(),mean_max_correlation=mean(spearman_max),sd_correlation=sd(spearman_max),mean_lag=mean(lag_spearman_max),sd_lag=sd(lag_spearman_max),mean_therapist_mov=mean(mov_therapist),mean_patient_mov=mean(mov_patient))
@@ -154,7 +131,7 @@ kable(overview_type_f_pos)
 
 Females and negative correlation
 
-```{r, echo=FALSE}
+```{r, echo=TRUE}
 segmented_type_f_neg <- filter(MEA_segments_neg,sex=="F")%>%
         group_by(type)
 overview_type_f_neg <- summarise(segmented_type_f_neg,observed=n(),mean_max_correlation=mean(spearman_max),sd_correlation=sd(spearman_max),mean_lag=mean(lag_spearman_max),sd_lag=sd(lag_spearman_max),mean_therapist_mov=mean(mov_therapist),mean_patient_mov=mean(mov_patient))
@@ -165,7 +142,7 @@ Fisher Exact Test for independence for type of subject (Control/Diagnosed) versu
 
 Males. Positive correlation. Who leads.
 
-```{r, echo=FALSE}
+```{r, echo=TRUE}
 MEA_segments_pos_m<-filter(MEA_segments_pos,sex=="M")
 table(MEA_segments_pos_m$type,MEA_segments_pos_m$leads)
 #chisq.test(MEA_segments_pos_m$type,MEA_segments_pos_m$leads,)
@@ -176,7 +153,7 @@ fisher.test(MEA_segments_pos_m$type,MEA_segments_pos_m$leads,alternative="greate
 
 
 Males. Negative correlation. Who leads.
-```{r, echo=FALSE}
+```{r, echo=TRUE}
 MEA_segments_neg_m<-filter(MEA_segments_neg,sex=="M")
 table(MEA_segments_neg_m$type,MEA_segments_neg_m$leads)
 #chisq.test(MEA_segments_neg_m$type,MEA_segments_neg_m$leads)
@@ -186,7 +163,7 @@ fisher.test(MEA_segments_neg_m$type,MEA_segments_neg_m$leads,alternative="greate
 ```
 
 Females. Positive correlations. Who leads.
-```{r, echo=FALSE}
+```{r, echo=TRUE}
 MEA_segments_pos_f<-filter(MEA_segments_pos,sex=="F")
 table(MEA_segments_pos_f$type,MEA_segments_pos_f$leads)
 #chisq.test(MEA_segments_pos_f$type,MEA_segments_pos_f$leads,)
@@ -194,7 +171,7 @@ fisher.test(MEA_segments_pos_f$type,MEA_segments_pos_f$leads)
 ```
 
 Females. Negative correlation. Who leads.
-```{r, echo=FALSE}
+```{r, echo=TRUE}
 MEA_segments_neg_f<-filter(MEA_segments_neg,sex=="M")
 table(MEA_segments_neg_f$type,MEA_segments_neg_f$leads)
 #chisq.test(MEA_segments_neg_f$type,MEA_segments_neg_f$leads)
@@ -208,7 +185,7 @@ fisher.test(MEA_segments_neg_f$type,MEA_segments_neg_f$leads,alternative="greate
 The next question addressed is if the type of patient (Control/Diagnosed) has an influence on whether the correlation is positive or negative. 
 
 Males. Is the correlation positive or negative.
-```{r, echo=FALSE}
+```{r, echo=TRUE}
 MEA_segments_m<-filter(MEA_segments,sex=="M")
 table(MEA_segments_m$type,MEA_segments_m$correl)
 #chisq.test(MEA_segments_m$type,MEA_segments_m$correl)
@@ -218,7 +195,7 @@ fisher.test(MEA_segments_m$type,MEA_segments_m$correl,alternative = "greater")
 ```
 
 Males when therapist leads. Is the correlation positive or negative.
-```{r, echo=FALSE}
+```{r, echo=TRUE}
 MEA_segments_m<-filter(MEA_segments,sex=="M",leads=="therapist")
 table(MEA_segments_m$type,MEA_segments_m$correl)
 #chisq.test(MEA_segments_m$type,MEA_segments_m$correl)
@@ -228,7 +205,7 @@ fisher.test(MEA_segments_m$type,MEA_segments_m$correl,alternative = "greater")
 ```
 
 Males when patient leads. Is the correlation positive or negative.
-```{r, echo=FALSE}
+```{r, echo=TRUE}
 MEA_segments_m<-filter(MEA_segments,sex=="M",leads=="patient")
 table(MEA_segments_m$type,MEA_segments_m$correl)
 #chisq.test(MEA_segments_m$type,MEA_segments_m$correl)
@@ -238,7 +215,7 @@ fisher.test(MEA_segments_m$type,MEA_segments_m$correl,alternative = "greater")
 ```
 
 Females. Is the correlation positive or negative.
-```{r, echo=FALSE}
+```{r, echo=TRUE}
 MEA_segments_f<-filter(MEA_segments,sex=="F")
 table(MEA_segments_f$type,MEA_segments_f$correl)
 #chisq.test(MEA_segments_f$type,MEA_segments_f$correl)
@@ -248,7 +225,7 @@ fisher.test(MEA_segments_f$type,MEA_segments_f$correl,alternative = "greater")
 ```
 
 Females when therapist leads. Is the correlation positive or negative.
-```{r, echo=FALSE}
+```{r, echo=TRUE}
 MEA_segments_f<-filter(MEA_segments,sex=="F",leads=="therapist")
 table(MEA_segments_f$type,MEA_segments_f$correl)
 #chisq.test(MEA_segments_f$type,MEA_segments_f$correl)
@@ -259,7 +236,7 @@ fisher.test(MEA_segments_f$type,MEA_segments_f$correl,alternative = "greater")
 
 
 Females when patient leads. Is the correlation positive or negative.
-```{r, echo=FALSE}
+```{r, echo=TRUE}
 MEA_segments_f<-filter(MEA_segments,sex=="F",leads=="patient")
 table(MEA_segments_f$type,MEA_segments_f$correl)
 #chisq.test(MEA_segments_f$type,MEA_segments_f$correl)
@@ -270,7 +247,7 @@ fisher.test(MEA_segments_f$type,MEA_segments_f$correl,alternative = "greater")
 
 Comparison of sexes when the therapist leads. 
 For controls. Is the correlation positive or negative.
-```{r, echo=FALSE}
+```{r, echo=TRUE}
 MEA_segments_b<-filter(MEA_segments,type=="Control",leads=="therapist")
 table(MEA_segments_b$sex,MEA_segments_b$correl)
 #chisq.test(MEA_segments_f$type,MEA_segments_f$correl)
@@ -281,7 +258,7 @@ fisher.test(MEA_segments_b$sex,MEA_segments_b$correl,alternative = "greater")
 
 Comparison of sexes when the therapist leads. 
 For diagnosed. Is the correlation positive or negative.
-```{r, echo=FALSE}
+```{r, echo=TRUE}
 MEA_segments_b<-filter(MEA_segments,type=="Diagnosed",leads=="therapist")
 table(MEA_segments_b$sex,MEA_segments_b$correl)
 #chisq.test(MEA_segments_f$type,MEA_segments_f$correl)
