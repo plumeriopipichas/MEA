@@ -17,7 +17,8 @@ library(knitr)
 zones <- c("head","torso","legs")
 rois <- c(paste(zones,"patient",sep="_"),paste(zones,"therapist",sep="_"))
 logbook <- read.csv("logbook_first_sessions.csv",encoding = "UTF-8")
-d=0.5
+d = 1
+lmax = 450
 ```
 
 ## Introduction
@@ -68,14 +69,12 @@ kable(completa[['Vid12']][115:204, ],caption='Top entries for Vid12 raw data.')
 ## Exploring short lapses with high movement.
 
 ```{r echo=TRUE}
-quantile = 0.5
+quantile = 0.7
 ```
 
 Videos are partitioned into `r 60*d` second segments. Below we show the number of segments of each of the videos.
 
-
 ```{r}
-d<-0.5
 cuantos_frames<-numeric()
 for (i in names(completa)){
     partes<-length(partition_data(completa[[i]],minutes=d))
@@ -94,7 +93,7 @@ lista_mov_altos <- data.frame(matrix(ncol = 15,nrow = 0))
 for (v in names(completa)){
     lista_mov_altos <- rbind(lista_mov_altos,
           crea_lista_movs(partition_data(completa[[v]],minutes=d),
-                          nombre_video = v,q=quantile,lagmax=510))    
+                          nombre_video = v,q=quantile,lagmax=lmax))    
 }
 
 lista_mov_altos<-filter(lista_mov_altos,!leads=="-")
@@ -114,7 +113,6 @@ for (k in 1:nrow(lista_mov_altos)){
 }
 ```
 
-
 Adding a column that indicates whether the cross correlations are dominated by positive or by negative correlations.
 
 ```{r echo=TRUE}
@@ -125,7 +123,6 @@ lista_mov_altos$correl[x]<-"positive"
 lista_mov_altos$correl[y]<-"negative"
 MEA_segments<-lista_mov_altos
 ```
-
 
 Below, we show the database _MEA_segments_ containing `r nrow(MEA_segments)` segments having high mobility for both subjects. Cross correlations were evaluated and registered for each of these segments. To determine which subject is leading, the sign of the lag with maximum correlation is considered (positive when therapist leads). 
 
