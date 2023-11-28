@@ -73,5 +73,22 @@ print(res.aov)
 res.aov <- Mean_corr_by_video_pc %>% anova_test(mean_pc ~ sex * type)
 print(res.aov)
 
+res.aov <- filter(Mean_corr_by_video_pc,sex=='H') %>% 
+  anova_test(mean_pc ~ type)
+print(res.aov)
+
+res.aov <- filter(Mean_corr_by_video_pc,sex=='M') %>% 
+  anova_test(mean_pc ~ type)
+print(res.aov)
+
+res.aov <- filter(Mean_corr_by_video_nc,sex=='H') %>% 
+  anova_test(mean_nc ~ type)
+print(res.aov)
+
+res.aov <- filter(Mean_corr_by_video_nc,sex=='M') %>% 
+  anova_test(mean_nc ~ type)
+print(res.aov)
+
+
 rm(temp,x,x1,x2)
 

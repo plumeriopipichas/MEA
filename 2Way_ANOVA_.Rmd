@@ -1,0 +1,198 @@
+---
+title: "Synchronization in MEA data. Code report."
+author: "F. Menéndez Conde"
+date: "`r Sys.Date()`"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+Here, we perform a two-way ANOVA, in order to determine whether the sex (male - female) and type (control - diagnosed) of the subject has an influence on the synchronization of movement between the patient and the therapist. We are interested in the segments where the therapist leads the movement and the patient follows. The negative and positive correlations are considered separately. The former corresponds to the patients movement being inhibited by the therapist's, and the latter to the opposite situation, where the patient movement mirrors the therapist.    
+
+## The database
+
+First, the previously generated database is uploaded, and the relevant variables for the present analysis are selected. 
+
+```{r}
+library(dplyr)
+library(rstatix)
+library(ggplot2)
+library(ggpubr)
+library(knitr)
+
+MEA_segments<-read.csv("MEA_segments.csv")%>%
+  select(video,zone,spearman_max,lag_spearman_max,spearman_min,lag_spearman_min,sex,type)
+```
+
+The data has a total of `r nrow(MEA_segments)` observations. 
+We look at ten randomly chosen observations of them. 
+
+```{r}
+n<-nrow(MEA_segments)
+x<-sample(n,10)
+kable(MEA_segments[x, ])
+```
+
+Then we filter the data, keeping the observations where the movement is led by the therapist and the lag is at least 1 second in the relevant direction. This is done in order to avoid external noise that may give spurious simultaneous movement of the subjects. 
+
+```{r}
+x1<-which(MEA_segments$spearman_max+MEA_segments$spearman_min>0&
+          MEA_segments$lag_spearman_max>1)
+x2<-which(MEA_segments$spearman_max+MEA_segments$spearman_min<0&
+          MEA_segments$lag_spearman_min>1)
+
+MEA_segments<-MEA_segments[c(x1,x2), ]
+```
+
+The database is now reduced to `r nrow(MEA_segments)` observations, each corresponding to a one minute segment and roi for which the therapist leads. They are distributed into the different 19 videos as follows:
+
+```{r}
+MEA_segments <- group_by(MEA_segments,video)
+segments_videos <- summarise(MEA_segments,segments=n())
+kable(segments_videos)
+MEA_segments<-ungroup(MEA_segments)
+```
+
+# About this database: 
+It was generated from data recorded by the MEA software applied to 19 videos of therapy sessions. Three regions of interest (roi) were considered: head, torso and legs. The videos were split in 1 minute segments, one for each roi. In each segment the maximum and minimum spearman cross-correlations were recorded (with maximal lags of 15 seconds in each direction). Only the segments where the movement of both subjects was above the median is kept.       
+
+## Data preparation and visualization
+
+Look into the values of the extremal cross-correlations for each segment, and the relation between maximal and minimal. 
+
+```{r}
+ggplot(MEA_segments,aes(spearman_max,spearman_min))+geom_point()
+correlation <-cor(MEA_segments$spearman_max,MEA_segments$spearman_min)
+print(summary(MEA_segments$spearman_max))
+print(summary(MEA_segments$spearman_min))
+
+n1 <- length(which(MEA_segments$spearman_max<0))
+n2 <- length(which(MEA_segments$spearman_min>0))
+```
+
+The correlation between the values of the maximal and minimal correlations is `r correlation`. The maximal correlations are positive for every observation but `r n1` of them. The minimal are negative for all but `r n2` of them.  
+
+Next, we create the _Mean_corr_by_video_ database with the mean maximal and minimal cross correlations for each video. This database will be used to perform the ANOVA. 
+
+```{r}
+MEA_segments<-group_by(MEA_segments,video,sex,type)
+Mean_corr_by_video<-summarise(MEA_segments,mean_pc=mean(spearman_max),mean_nc=mean(spearman_min),sd_pc=sd(spearman_max),sd_nc=sd(spearman_min))
+MEA_segments<-ungroup(MEA_segments)
+kable(Mean_corr_by_video)
+```
+
+
+The values corresponding to the relevant variables (sex and type) are shown below:
+
+```{r}
+Mean_corr_by_video<-group_by(Mean_corr_by_video,sex,type)
+
+table_1<-summarise(Mean_corr_by_video,mean_pc=mean(mean_pc),
+mean_nc=mean(mean_nc),sd_pc=mean(sd_pc),sd_nc=mean(sd_nc))
+kable(table_1)
+Mean_corr_by_video<-ungroup(Mean_corr_by_video)
+```
+
+The variables _mean_pc_ and _mean_nc_ are respectively the averages of the maximal (positive) and minimal (negative) cross correlations.
+Analogously for the standard deviations.
+
+Visualization:
+
+```{r}
+ggplot(Mean_corr_by_video,aes(x=sex,y=mean_pc,color=type))+geom_boxplot()+ggtitle("Distribution of mean max cc per video")
+ggplot(Mean_corr_by_video,aes(x=sex,y=mean_nc,color=type))+geom_boxplot()+ggtitle("Distribution of mean min cc per video")
+```
+
+## Analysis of variance
+
+Test for normality and homogeneity (positive correlations).
+
+```{r}
+model  <- lm(mean_pc ~ sex*type, data = Mean_corr_by_video)
+ggqqplot(residuals(model))
+shapiro_test(residuals(model))
+plot(model,1)
+Mean_corr_by_video %>% levene_test(mean_pc ~ sex*type)
+```
+
+The normality and homogeinity assumptions are not rejected. 
+
+Test for normality and homogeneity (negative correlations).
+
+```{r}
+model  <- lm(mean_nc ~ sex*type, data = Mean_corr_by_video)
+ggqqplot(residuals(model))
+shapiro_test(residuals(model))
+plot(model,1)
+Mean_corr_by_video %>% levene_test(mean_nc ~ sex*type)
+```
+
+The normality and homogeinity assumptions are not rejected. 
+
+Now, we look for outliers. For positive correlations:
+
+```{r}
+temp<-Mean_corr_by_video%>%group_by(sex,type)%>%identify_outliers(mean_pc)
+print(temp)
+```
+
+For negative correlations:
+
+```{r}
+temp<-Mean_corr_by_video%>%group_by(sex,type)%>%identify_outliers(mean_nc)
+print(temp)
+```
+
+No outliers were found in either case. 
+
+```{r, echo=FALSE}
+Mean_corr_by_video_nc<-Mean_corr_by_video
+if (length(x)>0){
+  Mean_corr_by_video_nc<-Mean_corr_by_video_nc[-x,]
+}
+Mean_corr_by_video_pc<-Mean_corr_by_video
+if (length(x)>0){
+  Mean_corr_by_video_pc<-Mean_corr_by_video_pc[-x,]
+}
+```
+
+
+Perform the two way ANOVAS for _mean_pc_ and _mean_nc_
+
+``` {r}
+anova_pc <- Mean_corr_by_video %>% anova_test(mean_nc ~ sex * type)
+print(anova_pc)
+  
+anova_nc <- Mean_corr_by_video %>% anova_test(mean_pc ~ sex * type)
+print(anova_nc)
+```
+
+
+Now, we perform one way anovas filtering for sex and looking if type influences the _mean_pc_ and _mean_nc_ outcomes.
+
+``` {r}
+
+print("Positive correlations, male subjects")
+res.aov <- filter(Mean_corr_by_video_pc,sex=='H') %>% 
+  anova_test(mean_pc ~ type)
+print(res.aov)
+
+print("Positive correlations, female subjects")
+res.aov <- filter(Mean_corr_by_video_pc,sex=='M') %>% 
+  anova_test(mean_pc ~ type)
+print(res.aov)
+
+print("Negative correlations, male subjects")
+res.aov <- filter(Mean_corr_by_video_nc,sex=='H') %>% 
+  anova_test(mean_nc ~ type)
+print(res.aov)
+
+print("Negative correlations, female subjects")
+res.aov <- filter(Mean_corr_by_video_nc,sex=='M') %>% 
+  anova_test(mean_nc ~ type)
+print(res.aov)
+```
