@@ -1,0 +1,97 @@
+---
+title: "Anova_who_leads"
+author: "Federico Menéndez Conde"
+date: "`r Sys.Date()`"
+output: word_document
+---
+
+## The database
+
+The database _MEA_segments.csv_ was generated previously from data recorded by the MEA software applied to 19 videos of therapy sessions. Three regions of interest (roi) were considered: head, torso and legs. The videos were split in 1 minute segments, one for each roi. In each segment the maximum and minimum spearman cross-correlations were recorded (with maximal lags of 15 seconds in each direction). Only the segments where the movement of both subjects was above the median is kept. Also, lags with less to 1 second are discarded. This is done in order to avoid external noise that may give spurious simultaneous movement of the subjects.      
+
+Upload the data and select the relevant variables for the present analysis. 
+
+```{r, echo=FALSE}
+library(dplyr)
+library(tidyr)
+library(rstatix)
+library(ggplot2)
+library(ggpubr)
+library(knitr)
+
+MEA_segments<-read.csv("MEA_segments.csv")%>%
+  select(video,spearman_max,lag_spearman_max,spearman_min,lag_spearman_min,sex,type)
+x1<-which(MEA_segments$spearman_max+MEA_segments$spearman_min>0&
+          abs(MEA_segments$lag_spearman_max)>1)
+x2<-which(MEA_segments$spearman_max+MEA_segments$spearman_min<0&
+          abs(MEA_segments$lag_spearman_min)>1)
+
+MEA_segments<-MEA_segments[c(x1,x2), ]
+          
+```
+
+The data has a total of `r nrow(MEA_segments)` observations. Now we filter the data further, to retain only the observations with a high correlation (for either sign). 
+
+```{r, echo=FALSE}
+MEA_segments_leads <- filter(MEA_segments,max(abs(spearman_max),abs(spearman_min))>0.3)
+```
+
+
+The `r nrow(MEA_segments_leads)` observations are distributed as follows:
+
+```{r}
+MEA_segments_leads <- group_by(MEA_segments_leads,video)
+segments_videos_leads <- reframe(MEA_segments_leads,segments_pc=n())
+#kable(segments_videos_pos)
+MEA_segments_leads<-ungroup(MEA_segments_leads)
+kable(segments_videos_leads)
+```
+
+Note that each of the seventeen video sessions is represented at least three times in the database. The complete database is shown below. We add a relevant variable who_leads showing which sibject leads the movement when the absolute value of the correlation is maximal. 
+
+```{r}
+leading<-factor()
+for (i in 1:nrow(MEA_segments_leads)){
+  if (MEA_segments_leads$spearman_max[i]>MEA_segments_leads$spearman_min[i]){
+    if (MEA_segments_leads$lag_spearman_max[i]>0){
+      temp<-'therapist'
+    }
+    else{
+      temp<-'patient'
+    }
+  }  
+  else{
+    if (MEA_segments_leads$lag_spearman_min[i]>0){
+      temp<-'therapist'
+    }
+    else{
+      temp<-'patient'
+    }
+  }
+  leading<-c(leading,temp)
+}
+MEA_segments_leads$who_leads<-leading
+
+kable(MEA_segments_leads)
+```
+
+
+```{r}
+video_lead_count <- group_by(MEA_segments_leads,video,sex,type,who_leads)%>%
+  reframe(count_leads=n())%>%
+  ungroup()
+
+video_lead_count <- pivot_wider(video_lead_count,names_from = who_leads,values_from = count_leads)
+video_lead_count <- replace(video_lead_count,is.na(video_lead_count),0)
+
+kable(video_lead_count)
+```
+
+For each type and sex, we calculate the mean of the ratios of the frequencies of therapist leading. Values larger than 0 correspond to the therapist leading more frequently than therapist.
+
+```{r}
+lead_count<-group_by(video_lead_count,sex,type)
+
+table_1<-reframe(lead_count,ratio=mean((therapist-patient)/(therapist+patient)))
+kable(table_1)
+```

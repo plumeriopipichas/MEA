@@ -15,7 +15,7 @@ We perform ANOVA tests, in order to determine whether the sex (male - female) an
 
 ## The database
 
-The database _MEA_segments.csv_ was generated previously from data recorded by the MEA software applied to 19 videos of therapy sessions. Three regions of interest (roi) were considered: head, torso and legs. The videos were split in 1 minute segments, one for each roi. In each segment the maximum and minimum spearman cross-correlations were recorded (with maximal lags of 15 seconds in each direction). Only the segments where the movement of both subjects was above the median is kept.     
+The database _MEA_segments.csv_ was generated previously from data recorded by the MEA software applied to 19 videos of therapy sessions. Three regions of interest (roi) were considered: head, torso and legs. The videos were split in 1 minute segments, one for each roi. In each segment the maximum and minimum Spearman cross-correlations were recorded (with maximal lags of 15 seconds in each direction). Only the segments where the movement of both subjects was above the median is kept.     
 
 Upload the data and select the relevant variables for the present analysis. 
 
@@ -31,7 +31,7 @@ MEA_segments<-read.csv("MEA_segments.csv")%>%
 ```
 
 The data has a total of `r nrow(MEA_segments)` observations. 
-We look at ten of them, randomly chosen. 
+We look at ten of them, randomly chosen, for the sake of illustration. 
 
 ```{r}
 n<-nrow(MEA_segments)
@@ -41,7 +41,7 @@ kable(MEA_segments[x, ])
 
 The variables _spearman_max_ and _spearman_min_ are the extreme values attained by the spearman cross correlations for each observation. The variables _lag_spearman_max and _lag_spearman_min_ give the time gap between the movement of each subject for which the extreme values are reached. A positive sign of the lag corresponds to the therapist movement preceding the patient.   
 
-The data is filtered, keeping only the observations where the movement is led by the therapist. Also, lags with less to 1 second are discarded. This is done in order to avoid external noise that may give spurious simultaneous movement of the subjects. 
+In the next step, the data is filtered, so to keep only the observations where the movement is led by the therapist. Also, lags with less to 1 second are discarded. This is done in order to avoid external noise that may give spurious simultaneous movement of the subjects. 
 
 ```{r}
 x1<-which(MEA_segments$spearman_max+MEA_segments$spearman_min>0&
@@ -104,8 +104,8 @@ Analogously for the standard deviations.
 Visualization:
 
 ```{r}
-ggplot(Mean_corr_by_video,aes(x=sex,y=mean_pc,color=type))+geom_boxplot()+ggtitle("Distribution of mean max cc per video")
-ggplot(Mean_corr_by_video,aes(x=sex,y=mean_nc,color=type))+geom_boxplot()+ggtitle("Distribution of mean min cc per video")
+ggplot(Mean_corr_by_video,aes(x=sex,y=mean_pc,color=type))+geom_boxplot()+ggtitle("Positive correlations per video")
+ggplot(Mean_corr_by_video,aes(x=sex,y=mean_nc,color=type))+geom_boxplot()+ggtitle("Negatitive correlations in videos")
 ```
 
 ## Analysis of variance
@@ -208,7 +208,7 @@ print(res.aov)
 
 ## Results
 
-The two-way ANOVA showed evidence that the combination of sex and type affects the outcome when the correlations are negative ( _p<0.001_ ). Larger absolute values correspond to the male-treatment and the female-control groups. This suggests that the movement of the therapist inhibits the movement of those groups more than the other two (male-controls and female-treatment). The one-way ANOVAS showed an statistical significant difference between the female groups ( _p=0.009_ ) but not for the males 
+The two-way ANOVA showed evidence that the combination of sex and type affects the outcome when the correlations are negative ( _p<0.001_ ). Larger absolute values correspond to the male-treatment and the female-control groups. This suggests that the movement of the therapist inhibits the movement of those groups more than the other two (male-controls and female-treatment). The one-way ANOVAS showed an statistical significant difference between the female groups ( _p=0.004_ ) but not for the males 
 ( _p=0.122_ ). We note that this might be explained by the fact that the reduced number of male subjects.
 
-No significant differences were found for the positive correlations ( _p=0.07_ ). However, this is not far off, and evidence might be found with further studies.
+No significant differences were found for the positive correlations ( _p=0.07_ ). However, the results were not far off, and evidence might be found with further studies.
